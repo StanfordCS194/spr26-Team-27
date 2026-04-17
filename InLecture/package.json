@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "format": "prettier . --write",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
