@@ -1,0 +1,5 @@
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @kkellybonilla, @zararutherford, @abaveja313 and, @thevedants will be requested for
+# review when someone opens a pull request.
+*       @kkellybonilla @zararutherford @abaveja313 @thevedants

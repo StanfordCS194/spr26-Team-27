@@ -17,7 +17,9 @@ _make sure you’re on the branch where you’re working on your new change:_
 1. Re-sync with main:
    - `git pull origin main --rebase`
    - resolve merge conflicts if any
-2. Ensure CI passes locally
+2. Ensure CI passes locally:
+   - `npm run format`
+   - `npm run lint`
 3. Stage your changes:
    - `git add .`
 4. Commit your changes:
