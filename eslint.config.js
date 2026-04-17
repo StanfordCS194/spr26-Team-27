@@ -25,7 +25,6 @@ export default defineConfig([
       reactRefresh.configs.vite,
       reactX.configs["recommended-typescript"],
       reactDom.configs.recommended,
-      "prettier",
       eslintPluginPrettierRecommended,
     ],
     languageOptions: {
