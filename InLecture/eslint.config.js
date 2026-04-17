@@ -1,23 +1,28 @@
 import js from "@eslint/js";
+import reactDom from "eslint-plugin-react-dom";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+import reactX from "eslint-plugin-react-x";
 import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
-
 
 export default defineConfig([
   globalIgnores(["dist"]),
   {
-    files: ["**/*.{ts,tsx}"],
+    files: ["**/*.{ts,tsx}", "src/routeTree.gen.ts"],
+    rules: {
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowExportNames: ["Route"] },
+      ],
+    },
     extends: [
       js.configs.recommended,
-      tseslint.configs.strictTypeChecked,
+      tseslint.configs.recommendedTypeChecked,
       tseslint.configs.stylisticTypeChecked,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
-      reactX.configs['recommended-typescript'],
+      reactX.configs["recommended-typescript"],
       reactDom.configs.recommended,
     ],
     languageOptions: {
