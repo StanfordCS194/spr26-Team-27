@@ -1,3 +1,5 @@
+import logoWithIcon from "@/assets/InLectureLogoWithIcon.svg";
+import wordmark from "@/assets/InLectureWordmark.svg";
 import FeatureCard from "@/components/landingPage/FeatureCard";
 import HowItWorksItem from "@/components/landingPage/HowItWorksItem";
 import { PrimaryLink } from "@/components/landingPage/PrimaryLink";
@@ -16,11 +18,7 @@ function LandingPage() {
       {/* Navbar */}
 
       <div className="border-divider flex w-full flex-1 items-center border-b px-6 py-4">
-        <img
-          className="h-8"
-          src="src/assets/InLectureLogoWithIcon.svg"
-          alt="InLecture Logo"
-        />
+        <img className="h-8" src={logoWithIcon} alt="InLecture Logo" />
         <div></div>
       </div>
 
@@ -36,7 +34,9 @@ function LandingPage() {
             — so you can ask questions, get clarity, and stay engaged in a 300+
             person auditorium.
           </p>
-          <PrimaryLink to="/">Try it now</PrimaryLink>
+          <PrimaryLink to="/learn/$courseId" params={{ courseId: "cs-109" }}>
+            Try it now
+          </PrimaryLink>
         </div>
       </SectionContainer>
 
@@ -172,17 +172,15 @@ function LandingPage() {
           InLecture is currently in development. Sign up to get early access and
           help help us shape the future of AI in the classroom.
         </SectionDescription>
-        <PrimaryLink to="/">Try it out!</PrimaryLink>
+        <PrimaryLink to="/learn/$courseId" params={{ courseId: "cs-109" }}>
+          Try it out!
+        </PrimaryLink>
       </SectionContainer>
 
       {/* Footer */}
       <div className="bg-footer-bg flex w-full items-start justify-between px-6 py-4 sm:items-center">
         <div className="pt-1">
-          <img
-            src="src/assets/InLectureWordmark.svg"
-            alt="InLecture Logo"
-            className="w-28"
-          />
+          <img src={wordmark} alt="InLecture Logo" className="w-28" />
         </div>
         <div className="flex items-center">
           <p className="text-secondary-contr text-body text-right">
