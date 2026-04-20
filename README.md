@@ -43,3 +43,4 @@ _make sure you’re on the branch where you’re working on your new change:_
 ### Authors
 - Kelly Bonilla Guzmán
 - Amrit Baveja
+- Vedant Singh
