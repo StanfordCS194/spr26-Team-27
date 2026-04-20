@@ -1,8 +1,3 @@
-<p align="center">
-  <img src="./InLectureLogo.svg" alt="InLecture - Your favorite class companion" width="680" />
-</p>
-
-### Learn More Through Our [Wiki](https://github.com/StanfordCS194/spr26-Team-27/wiki)
 # InLecture
 
 <p align="center">
@@ -46,6 +41,6 @@ _make sure you’re on the branch where you’re working on your new change:_
 3. `git push origin <branch name> --force`
 
 ### Authors
-Amrit Baveja
-Vedant Singh
-
+- Kelly Bonilla Guzmán
+- Amrit Baveja
+- Vedant Singh
