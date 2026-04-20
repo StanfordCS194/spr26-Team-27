@@ -41,4 +41,5 @@ _make sure you’re on the branch where you’re working on your new change:_
 3. `git push origin <branch name> --force`
 
 ### Authors
+Kelly Bonilla Guzmán
 Amrit Baveja
