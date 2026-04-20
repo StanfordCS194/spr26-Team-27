@@ -1,0 +1,9 @@
+<svg width="100%" viewBox="198 144 337 66" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>InLecture wordmark</title>
+
+  <!-- Wordmark -->
+  <text x="202" y="202" font-family="sans-serif">
+    <tspan font-family="'DM Serif Display', Georgia, serif" font-style="italic" font-size="76" font-weight="400" fill="#1D9E75">In</tspan><tspan font-family="'DM Sans', sans-serif" font-size="76" font-weight="500" fill="#2C2C2A" dx="-4">Lecture</tspan>
+  </text>
+
+</svg>
