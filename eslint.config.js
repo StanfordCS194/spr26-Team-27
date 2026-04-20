@@ -34,4 +34,12 @@ export default defineConfig([
       },
     },
   },
+  {
+    files: ["src/routes/**/*.{ts,tsx}"],
+    rules: {
+      // TanStack Router's redirect() returns a Response (not Error), but throwing it
+      // is the framework's intended pattern for redirects in beforeLoad/loader.
+      "@typescript-eslint/only-throw-error": "off",
+    },
+  },
 ]);
