@@ -1,6 +1,6 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap");
+@import "tailwindcss";
 
 html,
 body,
@@ -59,6 +59,8 @@ body {
   --spacing-section: calc(var(--spacing) * 10); /* 40px */
   --spacing-block: calc(var(--spacing) * 6); /* 24px */
   --spacing-gap: calc(var(--spacing) * 4); /* 16px */
+
+  --width-sidebar: theme("width.72"); /* 288px */
 }
 
 @layer base {
