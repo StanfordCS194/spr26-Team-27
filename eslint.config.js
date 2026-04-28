@@ -8,9 +8,9 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["**/dist", "**/node_modules"]),
   {
-    files: ["**/*.{ts,tsx}", "src/routeTree.gen.ts"],
+    files: ["**/*.{ts,tsx}"],
     rules: {
       "react-refresh/only-export-components": [
         "warn",
@@ -29,13 +29,13 @@ export default defineConfig([
     ],
     languageOptions: {
       parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
   },
   {
-    files: ["src/routes/**/*.{ts,tsx}"],
+    files: ["apps/web/src/routes/**/*.{ts,tsx}"],
     rules: {
       // TanStack Router's redirect() returns a Response (not Error), but throwing it
       // is the framework's intended pattern for redirects in beforeLoad/loader.

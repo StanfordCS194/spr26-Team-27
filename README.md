@@ -6,6 +6,18 @@
 
 **Learn More Through Our [Wiki](https://github.com/StanfordCS194/spr26-Team-27/wiki)**
 
+## Repo Layout
+
+This repo is an npm-workspaces monorepo:
+
+```
+apps/
+  web/        # React + Vite frontend (@spr26/web)
+packages/     # shared TypeScript packages (add new ones here)
+```
+
+Run scripts from the repo root — `npm run dev` starts the web app, `npm run build` builds every workspace, and `npm run lint` / `npm run format` cover the whole tree. To add a new package, create `packages/<name>/` with its own `package.json` (use `"name": "@spr26/<name>"`); workspaces will pick it up on the next `npm install`.
+
 ## Contributing Guidelines
 
 ### Want to work on a new change?
@@ -41,7 +53,9 @@ _make sure you’re on the branch where you’re working on your new change:_
 3. `git push origin <branch name> --force`
 
 Zara Rutherford
+
 ### Authors
+
 - Kelly Bonilla Guzmán
 - Amrit Baveja
 - Vedant Singh
