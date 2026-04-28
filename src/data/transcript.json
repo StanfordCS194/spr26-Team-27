@@ -1,0 +1,451 @@
+[
+  {
+    "timestamp": "0:06",
+    "content": "Chris Piech is sick. [LAUGHTER]"
+  },
+  {
+    "timestamp": "0:12",
+    "content": "That's right. I just got the sad news yesterday evening. He's feverish in fact, but he's getting better."
+  },
+  {
+    "timestamp": "0:19",
+    "content": "Not COVID, another happy thing. However, this morning we had a conversation, who's"
+  },
+  {
+    "timestamp": "0:25",
+    "content": "going to teach this lecture? And as you guys know, I don't have to convince you Chris [? Pietsch ?] is a very good instructor."
+  },
+  {
+    "timestamp": "0:33",
+    "content": "So we said, we need one of our best CAs, one of our brightest. [LAUGHTER]"
+  },
+  {
+    "timestamp": "0:39",
+    "content": "One of our most talented. [LAUGHTER] One of our most enthusiastic."
+  },
+  {
+    "timestamp": "0:44",
+    "content": "All of them were busy, so you're stuck with me. All right. [LAUGHTER]"
+  },
+  {
+    "timestamp": "0:50",
+    "content": "My name is [? Selwyn. ?] I'm a CA for this class. I teach a couple sections, maybe some of you know me. I'm interested in this material because I really"
+  },
+  {
+    "timestamp": "0:56",
+    "content": "like thinking about intelligence in the context of decision making. So a lot of stuff that we deal with in this class"
+  },
+  {
+    "timestamp": "1:03",
+    "content": "has to do with modeling human uncertainty, making the best decisions we can with limited information."
+  },
+  {
+    "timestamp": "1:08",
+    "content": "If you ever want to talk about stuff like that, please let me know. But for today, we're going to continue from where we left off"
+  },
+  {
+    "timestamp": "1:13",
+    "content": "on Friday. We saw this really cool result called the central limit theorem. We're going to talk a little bit more about that,"
+  },
+  {
+    "timestamp": "1:19",
+    "content": "and then we're going to get into the world of statistics. So let's get started."
+  },
+  {
+    "timestamp": "1:25",
+    "content": "First thing is, you may have seen something either talking to your CAs or an announcement,"
+  },
+  {
+    "timestamp": "1:30",
+    "content": "there's going to be a personal challenge, a contest that you can enter if you want. Some of the information is going to be on the course website,"
+  },
+  {
+    "timestamp": "1:37",
+    "content": "also on Ed so you can check there. But basically, this is going to be an opportunity for you to try to take something that you're interested in"
+  },
+  {
+    "timestamp": "1:44",
+    "content": "and push on it with some of the tools that you've learned in this class. You'll have a little bit more control of your grade that way."
+  },
+  {
+    "timestamp": "1:49",
+    "content": "Also, it's just a great way to learn. I would really recommend everybody to think about it. So a little review."
+  },
+  {
+    "timestamp": "1:56",
+    "content": "Yeah, last time we saw a little bit more about this business with convolutions."
+  },
+  {
+    "timestamp": "2:01",
+    "content": "So in particular, whenever we have x equal to 0 and y equal to n, we know that their sum"
+  },
+  {
+    "timestamp": "2:07",
+    "content": "is going to be equal to n. And if we consider all these possibilities, we can write out a full probability like that,"
+  },
+  {
+    "timestamp": "2:13",
+    "content": "and that's what a convolution is for the discrete case. We also talked about summing independent dice rolls."
+  },
+  {
+    "timestamp": "2:20",
+    "content": "So first, we looked at the sum of one die roll. In this case, we have equal probability across all six possible values."
+  },
+  {
+    "timestamp": "2:27",
+    "content": "We see something looking more like a triangle here. And lastly, when we have three, things"
+  },
+  {
+    "timestamp": "2:32",
+    "content": "start to look a bit more like a normal distribution. And then we started talking about,"
+  },
+  {
+    "timestamp": "2:38",
+    "content": "what if we have an arbitrary large sum of these random variables as long as they're all iid?"
+  },
+  {
+    "timestamp": "2:44",
+    "content": "And this is where we got to the central limit theorem. Again, really impressive result, magical."
+  },
+  {
+    "timestamp": "2:49",
+    "content": "Where as long as we have n independent and identically distributed random variables. It doesn't matter what the distribution is as long as it's"
+  },
+  {
+    "timestamp": "2:56",
+    "content": "the same across all of them. We're able to-- if we know that their mean is mu and their variance is sigma squared,"
+  },
+  {
+    "timestamp": "3:03",
+    "content": "we're able to write this. That the distribution of their sum is distributed according to a Gaussian"
+  },
+  {
+    "timestamp": "3:10",
+    "content": "with its parameters scaled by n. It's not too often that we can say these very general things"
+  },
+  {
+    "timestamp": "3:17",
+    "content": "without knowing a lot more about the distributions we're talking about. So this is a very cool part of the class, and we're going to use some of these results"
+  },
+  {
+    "timestamp": "3:24",
+    "content": "to do some impressive things later on in this lecture. Also, this explains a lot. We saw this phenomenon earlier with this Galton Board"
+  },
+  {
+    "timestamp": "3:31",
+    "content": "where if we think about this as n equals 5 trials in a binomial with probability 0.5 each"
+  },
+  {
+    "timestamp": "3:37",
+    "content": "of having a success either going left or right, then we saw that this starts to look like a normal distribution."
+  },
+  {
+    "timestamp": "3:43",
+    "content": "Well, now we can think about this a bit more precisely. If we have a binomial random variable, which"
+  },
+  {
+    "timestamp": "3:48",
+    "content": "is a sum of Bernoulli iid random variables, then we have this new explanation here."
+  },
+  {
+    "timestamp": "3:54",
+    "content": "We can say that the binomial is the sum of Bernoulli random variables. And what do we do?"
+  },
+  {
+    "timestamp": "3:59",
+    "content": "We're able to say that the distribution is just scaling the mean, which is p, by n."
+  },
+  {
+    "timestamp": "4:06",
+    "content": "And similarly, we take the variance and scale it by n, and you'll notice that looks a lot"
+  },
+  {
+    "timestamp": "4:12",
+    "content": "like the normal approximation that we would use for binomials."
+  },
+  {
+    "timestamp": "4:18",
+    "content": "So I'd like to play a game. I'd like to play a game. The game involves rolling 10, 6 sided dice."
+  },
+  {
+    "timestamp": "4:29",
+    "content": "I five of them here. And we're going to say that you guys win in the event"
+  },
+  {
+    "timestamp": "4:35",
+    "content": "that the sum is less than or equal to 25 or greater than or equal to 45."
+  },
+  {
+    "timestamp": "4:41",
+    "content": "And to add some stakes, I have $24 with me."
+  },
+  {
+    "timestamp": "4:54",
+    "content": "If you play, I'll give you $4 no matter what, and if you win, I'll give you the $20. Do I have any volunteers?"
+  },
+  {
+    "timestamp": "5:02",
+    "content": "Can I get you. Yes. Come on up. OK. Is it clear what's going on with the game? Let's talk about a little bit more formally."
+  },
+  {
+    "timestamp": "5:08",
+    "content": "Each of these dice rolls is going to be one of these x1 through x10. We're looking at the sum."
+  },
+  {
+    "timestamp": "5:15",
+    "content": "What's your name? I think we worked together at some point early on. Cool. These are yours."
+  },
+  {
+    "timestamp": "5:22",
+    "content": "Throw them on the floor. OK. I'm looking at a 2, a 3, that's 5, 9, 15, 19."
+  },
+  {
+    "timestamp": "5:34",
+    "content": "[LAUGHTER] So we need you to get less than 25--"
+  },
+  {
+    "timestamp": "5:39",
+    "content": "or sorry, less than or equal to 25 total or greater than or equal to 45, and we're at 19 right now."
+  },
+  {
+    "timestamp": "5:46",
+    "content": "Go for it."
+  },
+  {
+    "timestamp": "5:51",
+    "content": "That's not good. 2, 6, 10, 11, 13. 13 plus 19?"
+  },
+  {
+    "timestamp": "5:59",
+    "content": "Anybody know that one? That's greater than 45. Unfortunately, no."
+  },
+  {
+    "timestamp": "6:05",
+    "content": "I wish. Hey, thanks very much for playing, Riley. Give a hand for Riley. Give it up."
+  },
+  {
+    "timestamp": "6:10",
+    "content": "[APPLAUSE] A thing that you'll learn is--"
+  },
+  {
+    "timestamp": "6:17",
+    "content": "especially if you're in my section, I do not play fair."
+  },
+  {
+    "timestamp": "6:24",
+    "content": "What chance did Riley have of winning $24 from me? Let's talk about it."
+  },
+  {
+    "timestamp": "6:30",
+    "content": "OK. Using the central limit theorem, we're talking about a sum of 10 dice."
+  },
+  {
+    "timestamp": "6:37",
+    "content": "And we know we can write the distribution like this. So in particular, we know that mu, the average value"
+  },
+  {
+    "timestamp": "6:46",
+    "content": "of a single die roll, is 3.5. Calculate this earlier on in the class. Similarly for the variance, we know it's 35 over 12."
+  },
+  {
+    "timestamp": "6:53",
+    "content": "So what's this normal distribution that we're going to be able to use? We just scale them both by 10."
+  },
+  {
+    "timestamp": "6:59",
+    "content": "And so if you run the numbers, on the right hand side-- or sorry, on the left hand side, we're"
+  },
+  {
+    "timestamp": "7:05",
+    "content": "just setting up this interval that we're looking at where we consider there to be a win. We're doing 1 minus the complement of that."
+  },
+  {
+    "timestamp": "7:11",
+    "content": "On the right hand side we're just doing the standardization. That way, we can plug-in phi's."
+  },
+  {
+    "timestamp": "7:16",
+    "content": "There was only about an 8% chance of winning this game. It was possible, but not probable."
+  },
+  {
+    "timestamp": "7:22",
+    "content": "And that's the kind of thing we can do with the CLT. OK. Here's another problem. I'm going to let you guys work on this a little bit."
+  },
+  {
+    "timestamp": "7:28",
+    "content": "So find one or two other people around you and just talk through this problem."
+  },
+  {
+    "timestamp": "7:44",
+    "content": "[SIDE CONVERSATION]"
+  },
+  {
+    "timestamp": "8:46",
+    "content": "All right, let's talk about this. We're hitting 12 traffic lights. So these are-- excuse me, we're hitting 10 traffic lights."
+  },
+  {
+    "timestamp": "8:53",
+    "content": "These are going to be the random variables that we're considering. Now, we know that they're all distributed the same way."
+  },
+  {
+    "timestamp": "9:00",
+    "content": "We don't know what that distribution is, but we do know the mean and the standard deviation."
+  },
+  {
+    "timestamp": "9:06",
+    "content": "Can I get a volunteer for somebody to tell me what a first step is here?"
+  },
+  {
+    "timestamp": "9:13",
+    "content": "Offer bribes. I've bribes. I've been told I have bribes. I've starburst. [LAUGHTER]"
+  },
+  {
+    "timestamp": "9:22",
+    "content": "What's that? Well, [INAUDIBLE] the [? I ?] traffic light as the wait time"
+  },
+  {
+    "timestamp": "9:30",
+    "content": "is xi, the expectation is average wait time [INAUDIBLE]"
+  },
+  {
+    "timestamp": "9:36",
+    "content": "Right. So what's your name? The suggestion he's giving us is, we know that the average wait time across all of these"
+  },
+  {
+    "timestamp": "9:43",
+    "content": "is going to be 45 seconds. That is right. There you go."
+  },
+  {
+    "timestamp": "9:52",
+    "content": "So if we let T be the total wait time, it's going to be the sum of all of these individual random"
+  },
+  {
+    "timestamp": "9:58",
+    "content": "variables, and they all have, as was pointed out, the same expectation. And then we do something similar for the variance"
+  },
+  {
+    "timestamp": "10:04",
+    "content": "where we're going to scale both by this number, which is 10. So we're going to end up using this distribution."
+  },
+  {
+    "timestamp": "10:12",
+    "content": "And now what's the event that we're wanting to check for? You'll be on time if your total wait"
+  },
+  {
+    "timestamp": "10:19",
+    "content": "time is less than 8 minutes. Can somebody tell me how we modeled that using this random variable T?"
+  },
+  {
+    "timestamp": "10:24",
+    "content": "[INAUDIBLE] the probability that [INAUDIBLE].."
+  },
+  {
+    "timestamp": "10:31",
+    "content": "That's exactly right. That's exactly right."
+  },
+  {
+    "timestamp": "10:38",
+    "content": "[LAUGHTER] OK. And so if we plug-in 5, we get this value here."
+  },
+  {
+    "timestamp": "10:45",
+    "content": "It's extremely likely that we're going to be on time in this case. OK."
+  },
+  {
+    "timestamp": "10:51",
+    "content": "So we've stated the central limit theorem, but a question that you might have is, why should I believe that the central limit"
+  },
+  {
+    "timestamp": "10:57",
+    "content": "theorem is true? There are going to be times where we tell you to-- or at least in this case, I'll be telling"
+  },
+  {
+    "timestamp": "11:04",
+    "content": "you to trust me a little bit. Generally not a great idea. But if Chris says you should trust him, then you should do that."
+  },
+  {
+    "timestamp": "11:09",
+    "content": "But in this case, there is a proof. There's an object that we don't use too much in this class. It's called a characteristic function."
+  },
+  {
+    "timestamp": "11:14",
+    "content": "And if we do some work with that characteristic function, which involves the size of our sample, when"
+  },
+  {
+    "timestamp": "11:19",
+    "content": "we let that sample go to infinity, we're going to see that characteristic function becomes one of a normal distribution with the parameters"
+  },
+  {
+    "timestamp": "11:26",
+    "content": "that you would expect. And if you want to see more details about this, you can check out this YouTube video which I believe was made by a former CS101 student."
+  },
+  {
+    "timestamp": "11:34",
+    "content": "But for now, we'll just take the CLT at face value. So here it is stated one last time."
+  },
+  {
+    "timestamp": "11:43",
+    "content": "OK. So when we have a sum of iid random variables as long as their iid, doesn't matter what"
+  },
+  {
+    "timestamp": "11:49",
+    "content": "the distribution is exactly. We know that that's going to be in the limit a normal random variable."
+  },
+  {
+    "timestamp": "11:55",
+    "content": "So here's a question, what about for the average? OK."
+  },
+  {
+    "timestamp": "12:01",
+    "content": "So here's the average of x1 through xn. All we're doing is summing them up, dividing them"
+  },
+  {
+    "timestamp": "12:08",
+    "content": "by n, exactly what you would expect. So how would we expect this to behave?"
+  },
+  {
+    "timestamp": "12:13",
+    "content": "Well, again, by the central limit theorem, as n goes to infinity, we're actually going to be able to say that this is normal."
+  },
+  {
+    "timestamp": "12:20",
+    "content": "And you might be able to tell this based on what we've learned about linear transformations of normal random variables. But for the sample mean or-- excuse"
+  },
+  {
+    "timestamp": "12:26",
+    "content": "me, for the mean of the iid random variables, instead of it being n times mu and n times sigma squared,"
+  },
+  {
+    "timestamp": "12:33",
+    "content": "it's going to be this. And we're going to be using that in a moment."
+  },
+  {
+    "timestamp": "12:44",
+    "content": "So here's an interesting thing. I've got this--"
+  },
+  {
+    "timestamp": "12:49",
+    "content": "[INAUDIBLE] Sure."
+  },
+  {
+    "timestamp": "12:58",
+    "content": "OK. Cool. So let's say this distribution here is our parent population."
+  },
+  {
+    "timestamp": "13:07",
+    "content": "And we're going to be drawing, say, five random variables"
+  },
+  {
+    "timestamp": "13:15",
+    "content": "from this distribution. And then here in the blue section, these are the means of these groups of five"
+  },
+  {
+    "timestamp": "13:23",
+    "content": "that we're talking about. So if I add another one, we get more means, still more means."
+  },
+  {
+    "timestamp": "13:31",
+    "content": "If I add 10,000 pieces from this overall distribution,"
+  },
+  {
+    "t
