@@ -448,4 +448,1211 @@
     "content": "If I add 10,000 pieces from this overall distribution,"
   },
   {
-    "t
+    "timestamp": "13:36",
+    "content": "we see that this distribution of means starts looking normal. And then if we add even more, it gets more that way."
+  },
+  {
+    "timestamp": "13:43",
+    "content": "Now, this might make a lot of sense just because we're already drawing from a normal distribution. But what if I just make some crazy distribution like this?"
+  },
+  {
+    "timestamp": "13:50",
+    "content": "The thing we were saying is, no matter what the distribution is, as long as it's the same across the random variables,"
+  },
+  {
+    "timestamp": "13:57",
+    "content": "it should become normal when we take the means. And so let's look at that."
+  },
+  {
+    "timestamp": "14:04",
+    "content": "Indeed, we see that this happens. Just one more example. We'll pick a skewed distribution."
+  },
+  {
+    "timestamp": "14:12",
+    "content": "And it's centered in a bit of a different place, but we still get an approximately normal"
+  },
+  {
+    "timestamp": "14:18",
+    "content": "distribution of the means."
+  },
+  {
+    "timestamp": "14:27",
+    "content": "OK. So again, the average of the iid random variables is normal. So next, we want to ask about, what if we take"
+  },
+  {
+    "timestamp": "14:33",
+    "content": "the maximum of this question? So are we saying that the average of the iid variables [INAUDIBLE]"
+  },
+  {
+    "timestamp": "14:41",
+    "content": "Adding the expectations. So when we're averaging the iid random variables, we just take whatever those variables end up being."
+  },
+  {
+    "timestamp": "14:48",
+    "content": "So if we have 10 of them, we'll have 10 different numbers. Like in the general case we count it up to 10 actual numbers that we rolled,"
+  },
+  {
+    "timestamp": "14:54",
+    "content": "and then we just took-- we would take the average of that to get the mean. [INAUDIBLE] You're welcome."
+  },
+  {
+    "timestamp": "14:59",
+    "content": "Yeah. Why are there-- how do you get multiple means then? Why don't you just get one from all the variables examples?"
+  },
+  {
+    "timestamp": "15:07",
+    "content": "Sorry, say that one more time. Why are there multiple means? Why don't you just get one mean--"
+  },
+  {
+    "timestamp": "15:13",
+    "content": "Right. So you would just get one mean per one sample. What I was doing in that function for some of it was,"
+  },
+  {
+    "timestamp": "15:20",
+    "content": "I would take a group of five and just look at the mean of that and then take another group of five"
+  },
+  {
+    "timestamp": "15:25",
+    "content": "and look at the mean of that. And that random variable, namely the means or, sorry, the mean,"
+  },
+  {
+    "timestamp": "15:31",
+    "content": "that is normally distributed. That's what we were observing. Let me give you some starburst."
+  },
+  {
+    "timestamp": "15:37",
+    "content": "Oops. Got one this way. All right."
+  },
+  {
+    "timestamp": "15:43",
+    "content": "So we want to ask the same question about the maximum of several iid random samples. One more question."
+  },
+  {
+    "timestamp": "15:48",
+    "content": "I'm just a bit confused about what exactly becomes normally distributed."
+  },
+  {
+    "timestamp": "15:54",
+    "content": "So is it the sum of all the diagonals? What is it?"
+  },
+  {
+    "timestamp": "16:00",
+    "content": "The sum is also going to become normally distributed, and that's what we see in that sum case. This is also true for the average,"
+  },
+  {
+    "timestamp": "16:06",
+    "content": "although it's a slightly different looking normal distribution. So yeah, both of these lines are referring"
+  },
+  {
+    "timestamp": "16:12",
+    "content": "to two different things. The first one, the sum of iid random variables, it does become normal. Also, the average or the mean becomes normal as n grows."
+  },
+  {
+    "timestamp": "16:21",
+    "content": "[INAUDIBLE] multiple different trials. Exactly. And then the average is going to be that same thing divided"
+  },
+  {
+    "timestamp": "16:27",
+    "content": "by the number of trials. OK. Cool so for the maximum of iid random variables,"
+  },
+  {
+    "timestamp": "16:34",
+    "content": "it actually turns out that just like with the sum and with the average, we get-- no, it's a Gumbel."
+  },
+  {
+    "timestamp": "16:39",
+    "content": "It's a Gumbel. I don't make the rules. If I did, I wouldn't make them like this. We're not going to have to worry about a Gumbel here."
+  },
+  {
+    "timestamp": "16:46",
+    "content": "But the point is, there are a lot of different questions we can ask about several iid random variables"
+  },
+  {
+    "timestamp": "16:51",
+    "content": "and functions of them. We can take a function like the sum, function like the mean. We can take a function like the max, and these are distributed in a way that we can measure."
+  },
+  {
+    "timestamp": "16:58",
+    "content": "But in particular, we're focused on the normal ones, so the first two. OK."
+  },
+  {
+    "timestamp": "17:04",
+    "content": "Got another problem for you guys. We're going to estimate a clock running time."
+  },
+  {
+    "timestamp": "17:11",
+    "content": "So we know the mean is-- or actually, we don't know the mean. We're just saying we're going to represent it by some value T."
+  },
+  {
+    "timestamp": "17:17",
+    "content": "We do know the variance of the running time. It's going to be sigma squared equals 4 seconds. So what we want to do is run an algorithm repeatedly"
+  },
+  {
+    "timestamp": "17:24",
+    "content": "and measure the time of the clock running for each trial. The question that we want to ask is, how many trials do we"
+  },
+  {
+    "timestamp": "17:32",
+    "content": "need such that whatever estimate of T that we get is within this range,"
+  },
+  {
+    "timestamp": "17:37",
+    "content": "either 0.5 seconds below or 0.5 seconds above, with 95% certainty?"
+  },
+  {
+    "timestamp": "17:46",
+    "content": "Take a second to talk in your groups again a bit about how this might work."
+  },
+  {
+    "timestamp": "18:07",
+    "content": "[SIDE CONVERSATION]"
+  },
+  {
+    "timestamp": "18:37",
+    "content": "Now, let's pause here. Any initial thoughts? What are you guys thinking? [INAUDIBLE]"
+  },
+  {
+    "timestamp": "18:43",
+    "content": "As first directions. [INAUDIBLE]"
+  },
+  {
+    "timestamp": "18:54",
+    "content": "Write the mean using the central limit theorem. Oh, write the mean using the central limit theorem."
+  },
+  {
+    "timestamp": "18:59",
+    "content": "So we know that the mean is going to be this thing T,"
+  },
+  {
+    "timestamp": "19:05",
+    "content": "and we're going to want it here. We're going to want to say something about the certainty"
+  },
+  {
+    "timestamp": "19:12",
+    "content": "with which whatever sample or whatever mean we get for our runs is close to that."
+  },
+  {
+    "timestamp": "19:19",
+    "content": "So the way we can represent an event like this is, we want to say with 0.95 probability-- that's"
+  },
+  {
+    "timestamp": "19:25",
+    "content": "our certainty estimate that we were going for before, we want to say that the difference between the mean"
+  },
+  {
+    "timestamp": "19:31",
+    "content": "of the random variables that we get, that's x bar, minus the true mean, which we're calling T, we"
+  },
+  {
+    "timestamp": "19:37",
+    "content": "want that it's within this interval. And we know that the distribution of x bar minus T"
+  },
+  {
+    "timestamp": "19:43",
+    "content": "follows this normal distribution. Why do we know that? Because we have that they have the same standard deviation,"
+  },
+  {
+    "timestamp": "19:51",
+    "content": "but we're taking away the-- from the sample mean or from the mean of the random variables,"
+  },
+  {
+    "timestamp": "19:58",
+    "content": "we're taking away the true mean. And in expectation, those should both be the same, so we're going to have 0 as our mean of this difference."
+  },
+  {
+    "timestamp": "20:07",
+    "content": "And so here, we can just use what we with the CDF where we take the upper bound apply the CDF there, subtract off the lower bound."
+  },
+  {
+    "timestamp": "20:15",
+    "content": "We do our standard standardization that we need to for normal distributions. We end up with this, a little bit more algebra later,"
+  },
+  {
+    "timestamp": "20:25",
+    "content": "and we can solve directly for n. So using the central limit theorem,"
+  },
+  {
+    "timestamp": "20:33",
+    "content": "we're able to say exactly how many samples we need to see such that whatever estimate we get"
+  },
+  {
+    "timestamp": "20:39",
+    "content": "of the mean of this value T that we were looking at way back here is within 0.5 of the actual random variable."
+  },
+  {
+    "timestamp": "20:53",
+    "content": "So that's our exploration of CLT. Yeah. [? Sorry, ?] could open [INAUDIBLE] again? Sure."
+  },
+  {
+    "timestamp": "20:59",
+    "content": "Absolutely. So in the top right corner. There."
+  },
+  {
+    "timestamp": "21:08",
+    "content": "It was said before that the expectation of the mean"
+  },
+  {
+    "timestamp": "21:14",
+    "content": "of iid samples from this distribution--"
+  },
+  {
+    "timestamp": "21:19",
+    "content": "namely the one we're talking about in this problem set up, we're saying that the expectation of that is going to be T. That's what we see in this line here."
+  },
+  {
+    "timestamp": "21:29",
+    "content": "And so if we subtract from this random variable this constant T, it's not going to change to--"
+  },
+  {
+    "timestamp": "21:34",
+    "content": "it's not going to make any change to the variance because T is a constant. But when we look at what the new expected value is,"
+  },
+  {
+    "timestamp": "21:42",
+    "content": "instead of it being T, it will be T minus T, which will be 0. Does that help? Good."
+  },
+  {
+    "timestamp": "21:50",
+    "content": "OK. So now we're going to move into the world of statistics."
+  },
+  {
+    "timestamp": "21:58",
+    "content": "Let's look at a few definitions here. And we'll do this by motivating example."
+  },
+  {
+    "timestamp": "22:03",
+    "content": "So you guys are into the seventh week of CS109, and so you get reached out to people by people for help,"
+  },
+  {
+    "timestamp": "22:09",
+    "content": "people like the King of Bhutan. Now, what the King of Bhutan wants is to get a measurement of the true mean"
+  },
+  {
+    "timestamp": "22:15",
+    "content": "and the true variance of happiness in the King's citizens."
+  },
+  {
+    "timestamp": "22:23",
+    "content": "We can't ask everyone though. It's a big enough country to where that's going to be a bit of an issue. So instead, what we have to do is"
+  },
+  {
+    "timestamp": "22:29",
+    "content": "ask 200 people, something way less than the total population. Now, let's be clear."
+  },
+  {
+    "timestamp": "22:35",
+    "content": "If we did ask everybody, then we could just straight up answer the King's question. We just take the average of what everybody"
+  },
+  {
+    "timestamp": "22:40",
+    "content": "says for their happiness, we can calculate the variance as well, and then we're good to go. But instead, we have a data set that looks something like this."
+  },
+  {
+    "timestamp": "22:48",
+    "content": "We'll have 200 points. And if you want to calculate the mean of this-- just"
+  },
+  {
+    "timestamp": "22:53",
+    "content": "this example that we have here, we're going to get something like 83. So we could go to the King of Bhutan and be like,"
+  },
+  {
+    "timestamp": "22:59",
+    "content": "OK, true mean is 83, we're done with the first part."
+  },
+  {
+    "timestamp": "23:04",
+    "content": "We're going to see that that's a little bit unfulfilling. We're going to ask, is that really a good way to say the true mean of happiness"
+  },
+  {
+    "timestamp": "23:11",
+    "content": "among the Bhutanese people? So let's look at a population here. We can say this is all of Bhutan,"
+  },
+  {
+    "timestamp": "23:18",
+    "content": "this is our sample of it, And so this is what we're left with."
+  },
+  {
+    "timestamp": "23:25",
+    "content": "As another example to get your intuition going for why we wouldn't want to ask everybody or there are some cases where it's not even possible,"
+  },
+  {
+    "timestamp": "23:31",
+    "content": "consider your a watermelon farmer. So if you're a watermelon farmer, you need to check your watermelon"
+  },
+  {
+    "timestamp": "23:36",
+    "content": "to make sure that they're not rancid, that they taste good, all of that thing. Well, if you check every single one of your watermelon,"
+  },
+  {
+    "timestamp": "23:45",
+    "content": "then you're not going to have any left to sell. So you have to decide how many you want to test so that you have a good idea of what"
+  },
+  {
+    "timestamp": "23:51",
+    "content": "your population looks like without having to sample every member of it. OK. So let's talk about what a sample is."
+  },
+  {
+    "timestamp": "23:58",
+    "content": "Mathematically speaking, it's a collection of these random variables."
+  },
+  {
+    "timestamp": "24:05",
+    "content": "So if we had x1 through xn 200, that could be the random variables representing people's happiness in Bhutan."
+  },
+  {
+    "timestamp": "24:11",
+    "content": "So this is specifically the unspecified random variables. So we call this a sample from a distribution"
+  },
+  {
+    "timestamp": "24:17",
+    "content": "if they're all iid from that distribution, and therefore, they're going to have the same expectation"
+  },
+  {
+    "timestamp": "24:24",
+    "content": "and variance. So this is a sample of size 8."
+  },
+  {
+    "timestamp": "24:30",
+    "content": "Now, a realization of a sample is when we start getting specific values."
+  },
+  {
+    "timestamp": "24:35",
+    "content": "When we go ask person one through person 200 and get their actual happiness scores, that's when we get a realization of the sample of size 200"
+  },
+  {
+    "timestamp": "24:43",
+    "content": "for the people of Bhutan. OK. So let's say we have one sample, this 200 person sample that we"
+  },
+  {
+    "timestamp": "24:51",
+    "content": "were talking about. So how should we report our estimated statistics?"
+  },
+  {
+    "timestamp": "24:56",
+    "content": "Do we just say, the mean is 83 so we're going to report 83? In particular, if we wanted to say something"
+  },
+  {
+    "timestamp": "25:03",
+    "content": "about the error or the level of confidence we have in a region around some number, how would we do that?"
+  },
+  {
+    "timestamp": "25:09",
+    "content": "And then how would we later do a thing that we'll call hypothesis testing that we'll talk more about on Wednesday."
+  },
+  {
+    "timestamp": "25:18",
+    "content": "So we don't know the population mean and the true population variance. If we knew these things, we would just report them back"
+  },
+  {
+    "timestamp": "25:24",
+    "content": "to the King. There wouldn't be a problem. The issue is, we don't know what these variables are or what these parameters are, and we"
+  },
+  {
+    "timestamp": "25:30",
+    "content": "want to have some disciplined way of estimating them using only 200 samples."
+  },
+  {
+    "timestamp": "25:36",
+    "content": "So we need to think about what the best estimate would be in the first place."
+  },
+  {
+    "timestamp": "25:42",
+    "content": "So first, let's talk about estimating the mean. So we've got n random variables, x1 through xn."
+  },
+  {
+    "timestamp": "25:48",
+    "content": "They're all iid. They all have the same distribution. They all have the same expectation, specifically mu."
+  },
+  {
+    "timestamp": "25:57",
+    "content": "So how would we estimate this? One intuitive way is just to say, OK, let's take the average of those values. That's what we were talking about before."
+  },
+  {
+    "timestamp": "26:03",
+    "content": "That's how we got that number 83 in our specific example. But how do we say whether or not we think this is good?"
+  },
+  {
+    "timestamp": "26:11",
+    "content": "Here's one way. What if we could say that the expected value of our estimate"
+  },
+  {
+    "timestamp": "26:17",
+    "content": "actually matched up with the true population mean? Well, we can check this here."
+  },
+  {
+    "timestamp": "26:23",
+    "content": "So here's the mean of the sample, that's what x bar is."
+  },
+  {
+    "timestamp": "26:30",
+    "content": "This is just expanding out that definition. Over here, we're just moving that factor"
+  },
+  {
+    "timestamp": "26:35",
+    "content": "to the outside, the 1 over n since it's a constant. To get to this next line, we're using the linearity of expectations, and we know the expectation"
+  },
+  {
+    "timestamp": "26:43",
+    "content": "of xi for all xi. We were saying they're all the same across all the variables. So now we can sub in mu for the expectation of xi."
+  },
+  {
+    "timestamp": "26:51",
+    "content": "So now we're summing mu n times, dividing it by n, and we get mu on the outside."
+  },
+  {
+    "timestamp": "26:58",
+    "content": "So this is a powerful statement. We're saying that we would expect this estimator we're using, namely the mean of the sample that we're drawing,"
+  },
+  {
+    "timestamp": "27:06",
+    "content": "to line up with the true mean of the population. And we have a term for this."
+  },
+  {
+    "timestamp": "27:12",
+    "content": "We call this an unbiased estimator. Now, unbiased means a lot of different things in different contexts, so try not to overload this term."
+  },
+  {
+    "timestamp": "27:19",
+    "content": "But as a statistical term, this is exactly what it means when the expectation of our statistic lines"
+  },
+  {
+    "timestamp": "27:28",
+    "content": "up exactly with the true parameter."
+  },
+  {
+    "timestamp": "27:35",
+    "content": "So even if we can't report the true parameter because we don't know it, we can say with a reasonable level"
+  },
+  {
+    "timestamp": "27:41",
+    "content": "of certainty that the 83 we were talking about before isn't too bad just because it is unbiased."
+  },
+  {
+    "timestamp": "27:49",
+    "content": "So we could report something like this. This is just the sample mean."
+  },
+  {
+    "timestamp": "27:55",
+    "content": "And then we can also ask about what the variance of happiness is among the Bhutanese people?"
+  },
+  {
+    "timestamp": "28:02",
+    "content": "So here's the population variance."
+  },
+  {
+    "timestamp": "28:08",
+    "content": "This should look fairly familiar from when we looked at variants before. It's just the random variable minus the mean, the square"
+  },
+  {
+    "timestamp": "28:15",
+    "content": "of that deviation, and the expectation of that population mean there. And so if we only have a sample, we're"
+  },
+  {
+    "timestamp": "28:22",
+    "content": "going to do something similar. We might say something like, the average of the deviations from the sample mean."
+  },
+  {
+    "timestamp": "28:30",
+    "content": "So this is the sample mean mirroring where the population mean was before, and these big Xi are the instances of our sample,"
+  },
+  {
+    "timestamp": "28:38",
+    "content": "whereas the little Xi are just all the members of the population."
+  },
+  {
+    "timestamp": "28:43",
+    "content": "So if we take a look here, notice that instead of dividing by n, where n is the number of samples, we're dividing by n minus 1,"
+  },
+  {
+    "timestamp": "28:49",
+    "content": "and we'll talk about that a little bit more in a second."
+  },
+  {
+    "timestamp": "28:57",
+    "content": "So here's a graphic to tell us what's going on. Let's say that this is our full population here,"
+  },
+  {
+    "timestamp": "29:03",
+    "content": "and that the true mean of this population is mute right at that line."
+  },
+  {
+    "timestamp": "29:10",
+    "content": "So what we're doing is we're taking, for each member of the population, the deviation from you. That's what this x1 or this xi minus mu is."
+  },
+  {
+    "timestamp": "29:18",
+    "content": "We take the square of that, and we're summing that up. We do that for all of the different data points."
+  },
+  {
+    "timestamp": "29:24",
+    "content": "And so calculating this sigma squared is just doing this precisely for all the data points."
+  },
+  {
+    "timestamp": "29:30",
+    "content": "So what are we trying to do instead? For the sample mean, those yellow regions,"
+  },
+  {
+    "timestamp": "29:35",
+    "content": "those are going to represent the samples that we actually have. In the case of Bhutan, we can't talk to everybody"
+  },
+  {
+    "timestamp": "29:41",
+    "content": "about their happiness level. And so instead of the sample mean or, excuse me, instead of the population mean, we have a sample mean, x bar."
+  },
+  {
+    "timestamp": "29:48",
+    "content": "And it's from this that we're measuring the deviations. So we're looking at the difference from x1 to x bar,"
+  },
+  {
+    "timestamp": "29:56",
+    "content": "and similarly for the rest of our sampled points. So to get a little bit more intuition"
+  },
+  {
+    "timestamp": "30:02",
+    "content": "for why we might be dividing by n minus 1 instead of just n is that we need to have a little bit more variance given"
+  },
+  {
+    "timestamp": "30:09",
+    "content": "that the thing that we're comparing each of our sampled points to is also an estimate."
+  },
+  {
+    "timestamp": "30:16",
+    "content": "This x bar that we have here, we're guaranteed that it's an unbiased estimate of the true mean, but we don't know that it's going to be the true mean."
+  },
+  {
+    "timestamp": "30:22",
+    "content": "So you can think of n minus 1 in the denominator as opposed to n as increasing the level of variance that we have over this."
+  },
+  {
+    "timestamp": "30:31",
+    "content": "Now, this is another thing where showing that using n minus 1"
+  },
+  {
+    "timestamp": "30:36",
+    "content": "in the denominator instead of n. Knowing that that's an unbiased estimator is important. It's the same reason why we wanted"
+  },
+  {
+    "timestamp": "30:42",
+    "content": "to use the mean before for the unbiased estimate of the population mean."
+  },
+  {
+    "timestamp": "30:49",
+    "content": "But as you can see, the proof is a bit complicated. So this is something just for reference."
+  },
+  {
+    "timestamp": "30:54",
+    "content": "Feel free to go through it. It shouldn't be too out of range if you want to take a look, but we know that the expectation of s squared, which"
+  },
+  {
+    "timestamp": "31:02",
+    "content": "is the sample variance, when we define it using 1 over n minus 1 is going to match with the true parameter."
+  },
+  {
+    "timestamp": "31:12",
+    "content": "So in that sense, we say that the best estimate of sigma squared is the sample variance."
+  },
+  {
+    "timestamp": "31:19",
+    "content": "OK. How do I know this is the unique unbiased estimator? A unique unbiased estimator."
+  },
+  {
+    "timestamp": "31:25",
+    "content": "So if we had something that wasn't-- yeah, if we had something that wasn't the sample"
+  },
+  {
+    "timestamp": "31:33",
+    "content": "variance over there and we took the expectation of it and it matched up with the true parameter, then"
+  },
+  {
+    "timestamp": "31:40",
+    "content": "that would also be unbiased by the definition that we're using. So this need not be unique."
+  },
+  {
+    "timestamp": "31:49",
+    "content": "It's a good question. Another question. What's up?"
+  },
+  {
+    "timestamp": "31:54",
+    "content": "I think it's pretty circular to measure the accuracy of your thing by using the true thing."
+  },
+  {
+    "timestamp": "32:01",
+    "content": "Because how are you going to get the true thing if you don't have the thing? Got you."
+  },
+  {
+    "timestamp": "32:07",
+    "content": "Yeah, that would be circular for sure. Where is it that we're using the true thing in order to make our estimate?"
+  },
+  {
+    "timestamp": "32:13",
+    "content": "Are you talking about what this sample mean here. Yeah. Got you. So the sample mean is just the thing we were doing before."
+  },
+  {
+    "timestamp": "32:20",
+    "content": "With the dice, we were just rolling the dice and then we looked at the sum there but we could take the mean there or we"
+  },
+  {
+    "timestamp": "32:25",
+    "content": "had the specific values that were reported for those 200 people for Bhutan. So those aren't actually the true parameters."
+  },
+  {
+    "timestamp": "32:32",
+    "content": "We are looking at real samples. So there's some truth there, but it's only a subset of the full population."
+  },
+  {
+    "timestamp": "32:37",
+    "content": "So if we were using the true population parameter namely mu over here, then yeah, we'd be in trouble"
+  },
+  {
+    "timestamp": "32:43",
+    "content": "because that's exactly what we don't know. That's exactly what we're trying to calculate. So that's a good thought. There you go."
+  },
+  {
+    "timestamp": "32:51",
+    "content": "OK."
+  },
+  {
+    "timestamp": "32:56",
+    "content": "So we our-- we have a report that we can give on the average happiness, we have a report we can give on the variance,"
+  },
+  {
+    "timestamp": "33:05",
+    "content": "and we have our formula for the sample variance. OK, let's do a quick check."
+  },
+  {
+    "timestamp": "33:10",
+    "content": "Let's pair up for this again. I'm going to throw six quantities or, sorry, six objects on the board, and what"
+  },
+  {
+    "timestamp": "33:17",
+    "content": "I want you to do within your groups once again is assign for each of these one through six whether or not it's a random variable"
+  },
+  {
+    "timestamp": "33:23",
+    "content": "or a collection of random variables or a value or an event. So go ahead and think about that together a little bit."
+  },
+  {
+    "timestamp": "33:35",
+    "content": "[SIDE CONVERSATION]"
+  },
+  {
+    "timestamp": "34:51",
+    "content": "All right, let's talk about this. First one, what do we think? Is it a random variable, a value, or an event?"
+  },
+  {
+    "timestamp": "35:00",
+    "content": "I hear people saying value? Yes. That is right. That's exactly right, yep. Mu just stands for some value."
+  },
+  {
+    "timestamp": "35:07",
+    "content": "OK. For two, we've got a sample there. Random variable's, value, or event?"
+  },
+  {
+    "timestamp": "35:12",
+    "content": "Random valuables. I'm hearing random variables. Yeah, that's exactly right. So each of these, x1 to x8, are random variable that"
+  },
+  {
+    "timestamp": "35:21",
+    "content": "can take on a certain value. We don't have the instantiation of these random variables yet."
+  },
+  {
+    "timestamp": "35:26",
+    "content": "OK, so what's sigma squared? Population variance? Value. Value, exactly."
+  },
+  {
+    "timestamp": "35:32",
+    "content": "Same reason as for one. And then what is x bar? Random variable."
+  },
+  {
+    "timestamp": "35:37",
+    "content": "Random variable also correct. Because we don't know exactly what it is without getting our instantiation of the sample"
+  },
+  {
+    "timestamp": "35:44",
+    "content": "likened to. Now, what's five? What's going on there. Values."
+  },
+  {
+    "timestamp": "35:51",
+    "content": "I'm hearing value. I'm hearing events. Events. Events. It's going to be events from four"
+  },
+  {
+    "timestamp": "35:57",
+    "content": "if we're saying that x bar is a random variable. Then in five, we're saying this is the event that this random variable, namely the sample mean,"
+  },
+  {
+    "timestamp": "36:04",
+    "content": "takes on value 83. And then lastly, what's going on with six? Events."
+  },
+  {
+    "timestamp": "36:10",
+    "content": "I'm hearing events. Again, yep, same thing as in two. We have the random variables themselves,"
+  },
+  {
+    "timestamp": "36:15",
+    "content": "and then we have the instantiations of them. So this is going to be an event. Perfect."
+  },
+  {
+    "timestamp": "36:20",
+    "content": "OK. Well, here's something to think about. In this plot that we had here, we're"
+  },
+  {
+    "timestamp": "36:28",
+    "content": "reporting these numbers in a very exact way. We're saying, OK, here's our sample mean using an unbiased estimator, it's 83."
+  },
+  {
+    "timestamp": "36:36",
+    "content": "And then here's an unbiased estimate of the variance, it's 450. But even though the expectations lined up,"
+  },
+  {
+    "timestamp": "36:43",
+    "content": "we don't exactly know that we can be super confident in these numbers. Let me give you another example. Suppose instead of asking 200 people about their happiness,"
+  },
+  {
+    "timestamp": "36:51",
+    "content": "suppose I ask just one. Well, if I ask just one person, at least for the mean-- let's"
+  },
+  {
+    "timestamp": "36:57",
+    "content": "say they also report 83. Then at least for the mean, we're going to have the same mean in this case"
+  },
+  {
+    "timestamp": "37:02",
+    "content": "and in the case with 200 people. But I think you guys would agree with me that intuitively, when we're asking 200 different people"
+  },
+  {
+    "timestamp": "37:08",
+    "content": "and aggregating what they're saying, that's something we can be a bit more confident about that the mean might actually be 83 as opposed"
+  },
+  {
+    "timestamp": "37:14",
+    "content": "to, well, we just happen to find one person with that happiness value. So let's think a bit about that."
+  },
+  {
+    "timestamp": "37:23",
+    "content": "So we know that-- and this is from the CLT for the average of iid random variables."
+  },
+  {
+    "timestamp": "37:28",
+    "content": "We know that the mean or the sample mean is distributed according to this distribution."
+  },
+  {
+    "timestamp": "37:34",
+    "content": "We don't always know what these parameters are, mu and sigma squared, but we know that they exist out there."
+  },
+  {
+    "timestamp": "37:42",
+    "content": "And then we see that, yeah, just using the right side over there."
+  },
+  {
+    "timestamp": "37:47",
+    "content": "The variance of this random variable is going to be sigma squared over n. So now we can talk a bit about getting a range"
+  },
+  {
+    "timestamp": "37:55",
+    "content": "that we feel confident about. So in particular, we'll start with the standard error of the mean."
+  },
+  {
+    "timestamp": "38:02",
+    "content": "So the variance of our sample mean-- that's what VAR of x bar"
+  },
+  {
+    "timestamp": "38:07",
+    "content": "is, that's a measure of how close x bar is to mu."
+  },
+  {
+    "timestamp": "38:13",
+    "content": "So how do we make an estimate of this? So we want to estimate this parameter on the right hand"
+  },
+  {
+    "timestamp": "38:19",
+    "content": "side. Now, let's get something very clear here. Before when we were doing our unbiased estimate"
+  },
+  {
+    "timestamp": "38:24",
+    "content": "of the variance, that was the variance of-- above the sample or, excuse me, that"
+  },
+  {
+    "timestamp": "38:31",
+    "content": "was the variance with respect to the whole population. Now we're just wanting to ask about the variance"
+  },
+  {
+    "timestamp": "38:36",
+    "content": "of specifically the sample mean, this random variable that we're talking about x bar."
+  },
+  {
+    "timestamp": "38:41",
+    "content": "So we want to estimate that thing on the right hand side. And we can do this using the standard error."
+  },
+  {
+    "timestamp": "38:47",
+    "content": "You can think of the standard error as an estimate of the standard deviation of our estimate"
+  },
+  {
+    "timestamp": "38:52",
+    "content": "of what the mean is. So since we said that's x squared, which is the sample"
+  },
+  {
+    "timestamp": "38:59",
+    "content": "variance, is an unbiased estimate of that overall parameter sigma squared, which is the population variance,"
+  },
+  {
+    "timestamp": "39:05",
+    "content": "well, we can accordingly using the relationship between standard deviation and variance. We can say that the sample variance over n"
+  },
+  {
+    "timestamp": "39:12",
+    "content": "is going to be an unbiased estimate of sigma squared over n, which is exactly this value that we're"
+  },
+  {
+    "timestamp": "39:17",
+    "content": "wanting to estimate, and it'll come through accordingly."
+  },
+  {
+    "timestamp": "39:23",
+    "content": "So here's this worked out a little bit more. This is the substitution we're making"
+  },
+  {
+    "timestamp": "39:29",
+    "content": "where we're saying that the sample variance is an unbiased estimator of sigma squared."
+  },
+  {
+    "timestamp": "39:37",
+    "content": "So this equality sign here is a little bit misleading, but we're making this substitution"
+  },
+  {
+    "timestamp": "39:42",
+    "content": "for the sake of getting an estimate because we don't know this true parameter. And so then we get the standard error of x bar just like that,"
+  },
+  {
+    "timestamp": "39:50",
+    "content": "taking the square root of our estimate. And so these are the numbers that we get in these poll."
+  },
+  {
+    "timestamp": "39:59",
+    "content": "In particular, this will come out to about 1.5. So what does this mean? We now have some measure of the spread of the estimate"
+  },
+  {
+    "timestamp": "40:08",
+    "content": "that we're giving. So we're not just saying 83. Instead, we can say, we're thinking 83,"
+  },
+  {
+    "timestamp": "40:15",
+    "content": "and we're going to give a range of about two. We're being a little conservative here. We're extending a bit outside of the 1.5 that we calculated"
+  },
+  {
+    "timestamp": "40:22",
+    "content": "and saying, we're reasonably sure that it's going to be within a little bit more than one standard deviation."
+  },
+  {
+    "timestamp": "40:27",
+    "content": "And so we get a more precise statement than just saying like, OK, 83 is the mean that we got."
+  },
+  {
+    "timestamp": "40:34",
+    "content": "Yeah. Why isn't the standard [INAUDIBLE] why isn't the standard [INAUDIBLE]"
+  },
+  {
+    "timestamp": "40:42",
+    "content": "So let's take a look at-- let's go back a little bit more."
+  },
+  {
+    "timestamp": "40:51",
+    "content": "So when we have s squared here, interpret that similarly to how we were looking at sigma squared where it's"
+  },
+  {
+    "timestamp": "41:01",
+    "content": "more of a notational thing. If we take the square root of it, we can call it's, but what that means is just"
+  },
+  {
+    "timestamp": "41:09",
+    "content": "taking the square root of that overall function here. So we could write this as s over square root of n"
+  },
+  {
+    "timestamp": "41:17",
+    "content": "if we wanted to, but it's just a matter of notation. They should both be the same thing. Does that make sense?"
+  },
+  {
+    "timestamp": "41:23",
+    "content": "Cool. Let me give you some starburst."
+  },
+  {
+    "timestamp": "41:31",
+    "content": "OK. So now let's think about how we do this for the variance."
+  },
+  {
+    "timestamp": "41:37",
+    "content": "What we've been able to say is we've been able to report three things now even though we only ask for two. We were asked to be-- we were asked"
+  },
+  {
+    "timestamp": "41:42",
+    "content": "to give the true population mean and the true population variance. Obviously, we can't get those exactly otherwise"
+  },
+  {
+    "timestamp": "41:48",
+    "content": "we'd have to sample everybody. So instead, what we said is, here's our sample mean,"
+  },
+  {
+    "timestamp": "41:53",
+    "content": "and also here's a region over which we can be confident that it's correct. And so we're trying to do something similar for variance."
+  },
+  {
+    "timestamp": "42:01",
+    "content": "This is a trickier thing, and we're going to see more about this on Wednesday. But for now, let's take a look at another example of this."
+  },
+  {
+    "timestamp": "42:10",
+    "content": "So here are some of the PSet timings for the questions that you guys have worked on."
+  },
+  {
+    "timestamp": "42:17",
+    "content": "So we have a list for the amount of seconds that it takes each person at least as they're writing out the answers"
+  },
+  {
+    "timestamp": "42:23",
+    "content": "for each problem on the set. So let's take a look at some code here."
+  },
+  {
+    "timestamp": "42:29",
+    "content": "We've got a function analyze, and what we're wanting to do is something similar that we did for the people of Bhutan,"
+  },
+  {
+    "timestamp": "42:36",
+    "content": "except with respect to the PSet timings. So we can start-- this first line is just doing some cleaning here."
+  },
+  {
+    "timestamp": "42:43",
+    "content": "What we're taking in is the question key and then the list of times. And so we're just going to remove out"
+  },
+  {
+    "timestamp": "42:50",
+    "content": "all of the extraneous-- all of the unclean parts, so all of the parts that have zeros which doesn't really make any sense."
+  },
+  {
+    "timestamp": "42:57",
+    "content": "So we're left with a more accurate list. We can take the length of that list, and now we can just encode do the kinds of things"
+  },
+  {
+    "timestamp": "43:04",
+    "content": "that we've been doing in the last few slides. So first, we can look at the sample mean, which the unbiased estimator we were using"
+  },
+  {
+    "timestamp": "43:11",
+    "content": "was just taking the mean over the sum of all the items in the sample. That's exactly what's going on here with np.mean."
+  },
+  {
+    "timestamp": "43:18",
+    "content": "And to be clear NP, is the shorthand we're using for NumPy. Next, we can get the sample variance,"
+  },
+  {
+    "timestamp": "43:24",
+    "content": "and the only weird thing here is going to be this ddof. Now, this is a parameter for degrees of freedom,"
+  },
+  {
+    "timestamp": "43:32",
+    "content": "and setting this equal to 1 is how we get the minus 1 in this denominator. It's just a thing to remember."
+  },
+  {
+    "timestamp": "43:38",
+    "content": "If we set this to 0, then that's going to give us the case where we have 1 over n, which is not or is not an unbiased estimator."
+  },
+  {
+    "timestamp": "43:46",
+    "content": "It is a biased estimator. OK. Here we're getting the standard error,"
+  },
+  {
+    "timestamp": "43:52",
+    "content": "which we got just using the formula that we had before. We have the sample variance divided by n, square root of that."
+  },
+  {
+    "timestamp": "43:59",
+    "content": "And then if we want the sample standard deviation, that's just taking the square root of the sample variance."
+  },
+  {
+    "timestamp": "44:05",
+    "content": "And so now we have all of these items. And if we want to output their values, we can do it like this."
+  },
+  {
+    "timestamp": "44:12",
+    "content": "For each question, we have the mean number of seconds that we were looking at for somebody to solve it."
+  },
+  {
+    "timestamp": "44:19",
+    "content": "We have this plus minus in that first row it's the 83.8. That's giving us a range around which"
+  },
+  {
+    "timestamp": "44:25",
+    "content": "we can be pretty comfortable on our estimate of the mean. That's our standard error. On the right hand side, we have the standard deviation of time"
+  },
+  {
+    "timestamp": "44:32",
+    "content": "with respect to all of the samples that we're looking at, not just the mean."
+  },
+  {
+    "timestamp": "44:38",
+    "content": "And we have this for all the questions, and so we can plot that here."
+  },
+  {
+    "timestamp": "44:44",
+    "content": "So we have this for each question. The error bars are exactly what we were looking at in the Bhutan case."
+  },
+  {
+    "timestamp": "44:50",
+    "content": "And if we want to look at what's the expected amount of time for future that somebody would spend on a problem set,"
+  },
+  {
+    "timestamp": "44:56",
+    "content": "well, we can just take the expectation of the sum being the sum of the expectations for each problem, and what we have on the right hand side is--"
+  },
+  {
+    "timestamp": "45:03",
+    "content": "it looks like about 2.8 seven hours for PSet 1. PSet 3 looks more like 5.11 hours."
+  },
+  {
+    "timestamp": "45:10",
+    "content": "So if you're budgeting, say, 50 hours for PSets, it looks like in this case, we'd be pretty happily coming in under time."
+  },
+  {
+    "timestamp": "45:18",
+    "content": "And these are two questions that we were a bit surprised to see. If we have access to all the data, why are we estimating [INAUDIBLE]"
+  },
+  {
+    "timestamp": "45:25",
+    "content": "Sure. Why estimate? Right. So what we don't have is some true population"
+  },
+  {
+    "timestamp": "45:34",
+    "content": "over all students, say. So we could get population statistics for everybody that's in this database."
+  },
+  {
+    "timestamp": "45:41",
+    "content": "But if we want to say something more general about a population of students more broadly, then this is an estimate of that."
+  },
+  {
+    "timestamp": "45:51",
+    "content": "OK? So looking back at the Bhutan case, we want to get the standard deviation there,"
+  },
+  {
+    "timestamp": "45:57",
+    "content": "or, sorry, the standard error there and we did that, but we still have a question mark about getting some standard error about the sample"
+  },
+  {
+    "timestamp": "46:04",
+    "content": "variance. Next question. Can you always use the sample mean as an unbiased estimator"
+  },
+  {
+    "timestamp": "46:11",
+    "content": "for [INAUDIBLE] or are there some cases where it's like if you, say, chose your sample really poorly like for example"
+  },
+  {
+    "timestamp": "46:20",
+    "content": "in here, if you only measured the happiness of parents"
+  },
+  {
+    "timestamp": "46:27",
+    "content": "in Bhutan and not children or in the CS101 case,"
+  },
+  {
+    "timestamp": "46:32",
+    "content": "if there was some correlation between students who had [INAUDIBLE],, then you would just assume that your true mean"
+  },
+  {
+    "timestamp": "46:39",
+    "content": "was-- your sample mean, that's not-- Right. This is a great point, and I'll try"
+  },
+  {
+    "timestamp": "46:46",
+    "content": "to repeat what you were saying paraphrased a little bit. It's like, what if we're not doing a great job of sampling?"
+  },
+  {
+    "timestamp": "46:52",
+    "content": "What if there are some significant dependencies between we're getting some subset of the population that's all actually"
+  },
+  {
+    "timestamp": "46:57",
+    "content": "very similar to each other? I'm sure you guys have run across things like responders bias or something"
+  },
+  {
+    "timestamp": "47:03",
+    "content": "where if you just send a pull out to people, you might not get a representative sample of the people that are most likely to respond,"
+  },
+  {
+    "timestamp": "47:08",
+    "content": "things like that. So for this question, this is absolutely a good concern to have."
+  },
+  {
+    "timestamp": "47:14",
+    "content": "The way that we get past it in terms of writing things out in terms of what is and isn't an unbiased estimator"
+  },
+  {
+    "timestamp": "47:19",
+    "content": "has to do with that initial assumption we were making about our sample, which is that each data point that we're looking at is iid from the overall distribution."
+  },
+  {
+    "timestamp": "47:27",
+    "content": "So if they're all identically distributed and independent from each other, that's the kind of assumption"
+  },
+  {
+    "timestamp": "47:32",
+    "content": "and it is an assumption that we should check as we're doing data collection. This is an empirical problem that you guys will run into if you want to work in this area."
+  },
+  {
+    "timestamp": "47:40",
+    "content": "But in order to make that assumption or, sorry, by making that assumption, we shield ourselves from worries"
+  },
+  {
+    "timestamp": "47:46",
+    "content": "like, oh, there's actually a lot of pretty strong dependencies between the people that were getting samples from and things along those lines."
+  },
+  {
+    "timestamp": "47:54",
+    "content": "All right. This is going to be ambitious."
+  },
+  {
+    "timestamp": "48:01",
+    "content": "That's pretty good, right? Yeah. OK. So if we want to start getting some estimate on the error"
+  },
+  {
+    "timestamp": "48:09",
+    "content": "that we have for our sample variance, we're going to need to go into bootstrapping, and we can talk about that more on Wednesday."
+  },
+  {
+    "timestamp": "48:14",
+    "content": "But for now, lets talk a bit about the midterm that we had last week."
+  },
+  {
+    "timestamp": "48:21",
+    "content": "So here's the distribution that we ended up getting."
+  },
+  {
+    "timestamp": "48:26",
+    "content": "Got some colors here to bracket things in the groups. Just going along the x-axis increments of 5 points."
+  },
+  {
+    "timestamp": "48:34",
+    "content": "So to make things maybe a little bit more concrete, this green region that we're looking at, we're thinking, that's a B plus A minus kind of thing,"
+  },
+  {
+    "timestamp": "48:41",
+    "content": "the blue is going to be A minus A, the purple is going to be AA plus, and then we'll say that the yellow region is around B."
+  },
+  {
+    "timestamp": "48:49",
+    "content": "And so this is the performance that we had as a class."
+  },
+  {
+    "timestamp": "48:55",
+    "content": "You can see our statistics there for the mean and the variance."
+  },
+  {
+    "timestamp": "49:00",
+    "content": "If you want to go through the lecture slides and take a look at these correlations between how likely people are to do well on certain problems in relation"
+  },
+  {
+    "timestamp": "49:07",
+    "content": "to others, and then we can just talk about a few things for the logistics here. So again, take a look at that information on the contest."
+  },
+  {
+    "timestamp": "49:15",
+    "content": "And beyond that, we'll see you on Wednesday."
+  }
+]
