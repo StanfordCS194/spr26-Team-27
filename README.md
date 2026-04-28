@@ -44,3 +44,4 @@ Zara Rutherford
 ### Authors
 - Kelly Bonilla Guzmán
 - Amrit Baveja
+- Vedant Singh
