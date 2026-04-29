@@ -130,7 +130,7 @@ function TranscriptPage(): React.ReactNode {
                   className={`-ml-1.5 flex h-8 w-8 items-center justify-center rounded-md transition ${
                     isBookmarked
                       ? "bg-primary-tint text-primary-accent"
-                      : "text-olive-400 hover:text-primary-accent hover:bg-primary-tint/60"
+                      : "hover:text-primary-accent hover:bg-primary-tint/60 text-olive-400"
                   }`}
                 >
                   {isBookmarked ? (
@@ -206,17 +206,14 @@ function RecapPanel({ onClose }: { onClose: () => void }): React.ReactNode {
             type="button"
             onClick={onClose}
             aria-label="Close recap"
-            className="text-olive-500 hover:text-primary-accent rounded-full p-1 transition"
+            className="hover:text-primary-accent rounded-full p-1 text-olive-500 transition"
           >
             <MdClose className="h-5 w-5" />
           </button>
         </div>
         <ul className="flex flex-col gap-3">
           {RECAP_BULLETS.map((b) => (
-            <li
-              key={b}
-              className="text-primary flex gap-3 text-base leading-7"
-            >
+            <li key={b} className="text-primary flex gap-3 text-base leading-7">
               <span className="text-primary-accent mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
               <span>{b}</span>
             </li>

@@ -44,14 +44,16 @@ export interface UseLiveTranscriptResult {
 
 export function useLiveTranscript(): UseLiveTranscriptResult {
   const [count, setCount] = useState<number>(INITIAL_COUNT);
-  // Anchor wall-clock to the lecture clock at mount: lecture-time at startWall
-  // is INITIAL_OFFSET_SECONDS. From there, lecture time advances 1:1 with
-  // wall time, and each line is revealed when the wall clock crosses its
-  // timestamp. Refs (not state) so re-renders don't reset the anchor.
-  const startWallMsRef = useRef<number>(Date.now());
+  // Anchor wall-clock to the lecture clock: at startWallMs, lecture time is
+  // INITIAL_OFFSET_SECONDS. From there, lecture time advances 1:1 with wall
+  // time, and each line is revealed when the wall clock crosses its
+  // timestamp. Initialised lazily inside the effect so we don't call
+  // `Date.now()` during render (react-x/purity).
+  const startWallMsRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (count >= visibleLines.length) return;
+    startWallMsRef.current ??= Date.now();
     const nextLine = visibleLines[count];
     const nextLectureSec = timestampToSeconds(nextLine.timestamp);
     const targetMs = (nextLectureSec - INITIAL_OFFSET_SECONDS) * 1000;
