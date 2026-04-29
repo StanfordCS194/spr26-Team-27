@@ -1,7 +1,8 @@
 import { useChatContext } from "@/hooks/useChat";
 import type { Message } from "@/types/messages";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { MdSend } from "react-icons/md";
 
 function AskPage() {
   const { q } = useSearch({
@@ -14,6 +15,20 @@ function AskPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Draft lives in local state. We seed it from `?q=` when that param arrives
+  // externally (e.g. TranscriptPage's "Ask" button navigates here with a
+  // pre-filled question), but typing only updates local state — round-tripping
+  // every keystroke through the URL was dropping characters.
+  //
+  // The `prevQ` pattern is the React-recommended way to sync state on a prop
+  // change without using an effect (see react.dev: "Storing information from
+  // previous renders").
+  const [draft, setDraft] = useState<string>(q ?? "");
+  const [prevQ, setPrevQ] = useState<string | undefined>(q);
+  if (q !== prevQ) {
+    setPrevQ(q);
+    if (q) setDraft(q);
+  }
   useEffect(() => {
     if (q) inputRef.current?.focus();
   }, [q]);
@@ -23,13 +38,23 @@ function AskPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
+  const trimmed = draft.trim();
+  const canSend = trimmed.length > 0 && !streaming;
+
+  const submit = (): void => {
+    if (!canSend) return;
+    send(trimmed);
+    setDraft("");
+    // Drop any stale `?q=` left over from the transcript Ask flow.
+    if (q !== undefined) {
+      void navigate({ search: () => ({ q: undefined }), replace: true });
+    }
+  };
+
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key !== "Enter" || e.shiftKey) return;
     e.preventDefault();
-    const value = (q ?? "").trim();
-    if (!value) return;
-    send(value);
-    void navigate({ search: () => ({ q: undefined }), replace: true });
+    submit();
   };
 
   return (
@@ -49,21 +74,29 @@ function AskPage() {
             {error}
           </p>
         )}
-        <input
-          ref={inputRef}
-          type="text"
-          value={q ?? ""}
-          onChange={(e) =>
-            void navigate({
-              search: () => ({ q: e.target.value || undefined }),
-              replace: true,
-            })
-          }
-          onKeyDown={onKeyDown}
-          disabled={streaming}
-          placeholder={streaming ? "Thinking…" : "Ask a question"}
-          className="focus:outline-primary-accent border-divider bg-primary-contr text-primary w-full rounded-2xl border p-6 text-xl shadow-sm disabled:opacity-60"
-        />
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKeyDown}
+            disabled={streaming}
+            placeholder={streaming ? "Thinking…" : "Ask a question"}
+            className="focus:outline-primary-accent border-divider bg-primary-contr text-primary w-full rounded-2xl border p-6 pr-20 text-xl shadow-sm disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={submit}
+            // Disabled when the input is empty or a stream is in flight.
+            // Enter still submits — the button is just an obvious target.
+            disabled={!canSend}
+            aria-label="Send question"
+            className="bg-primary-accent absolute top-1/2 right-3 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <MdSend className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </div>
   );
