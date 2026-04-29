@@ -9,9 +9,29 @@ import { createContext, use, useEffect, useState } from "react";
 
 const REVEAL_INTERVAL_MS = 1600;
 
+// Demo seed: pretend the lecture has already been running for this long when
+// the page loads, so the transcript boots in mid-lecture instead of from the
+// first second. Set to 0 to start from the beginning.
+const INITIAL_OFFSET_SECONDS = 20 * 60;
+
 const visibleLines: transcriptItem[] = transcript.filter(
   (l) => l.content.trim() !== "",
 );
+
+function timestampToSeconds(ts: string): number {
+  const parts = ts.split(":").map((p) => Number.parseInt(p, 10));
+  if (parts.some(Number.isNaN)) return 0;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return 0;
+}
+
+// Number of lines already "elapsed" at boot — i.e. all lines whose timestamp
+// is at or before INITIAL_OFFSET_SECONDS. The reveal effect picks up after
+// this point.
+const INITIAL_COUNT: number = visibleLines.filter(
+  (l) => timestampToSeconds(l.timestamp) <= INITIAL_OFFSET_SECONDS,
+).length;
 
 export interface UseLiveTranscriptResult {
   lines: transcriptItem[];
@@ -21,7 +41,7 @@ export interface UseLiveTranscriptResult {
 }
 
 export function useLiveTranscript(): UseLiveTranscriptResult {
-  const [count, setCount] = useState<number>(0);
+  const [count, setCount] = useState<number>(INITIAL_COUNT);
 
   useEffect(() => {
     if (count >= visibleLines.length) return;
