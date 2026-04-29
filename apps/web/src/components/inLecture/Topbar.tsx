@@ -1,10 +1,10 @@
 import SidebarContext from "@/contexts/SidebarContext";
 import { lectures } from "@/data/lectures";
 import type { Lecture } from "@/types/lectures";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { use, useEffect, useRef, useState } from "react";
 import { IoIosArrowBack, IoIosMenu } from "react-icons/io";
-import { MdCheckCircle, MdHelpOutline } from "react-icons/md";
+import { MdCheckCircle, MdHelpOutline, MdLogout } from "react-icons/md";
 
 const CONFIRMATION_MS = 4000;
 
@@ -13,8 +13,13 @@ function Topbar(): React.ReactNode {
     from: "/learn/$courseId/lectures/$lectureId",
   });
   const { sidebarOpen, setSidebarOpen } = use(SidebarContext)!;
+  const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
+
+  const onSignOut = (): void => {
+    void navigate({ to: "/" });
+  };
 
   useEffect(() => {
     return () => {
@@ -107,6 +112,23 @@ function Topbar(): React.ReactNode {
           >
             Transcript
           </Link>
+        </div>
+
+        <div className="border-divider flex items-center gap-2 border-l pl-6">
+          <div className="bg-primary-tint text-primary-accent-dark flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold">
+            z
+          </div>
+          <span className="text-primary hidden text-sm font-medium sm:inline">
+            zararuth
+          </span>
+          <button
+            type="button"
+            onClick={onSignOut}
+            aria-label="Sign out"
+            className="hover:text-primary-accent hover:bg-primary-tint/60 ml-1 flex h-8 w-8 items-center justify-center rounded-full text-olive-500 transition"
+          >
+            <MdLogout className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </div>
