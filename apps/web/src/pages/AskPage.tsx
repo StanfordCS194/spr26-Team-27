@@ -10,6 +10,9 @@ import {
   MdAccessTime,
   MdExpandMore,
 } from "react-icons/md";
+import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
 
 // Mock quick prompts (PRD Feature 10). Tapping a chip submits it as a normal
 // question. "I'm lost" lives in the topbar so it isn't duplicated here.
@@ -210,10 +213,53 @@ function StudentMessage({ message }: { message: Message }): React.ReactNode {
   );
 }
 
+// remark-math expects $…$ / $$…$$ delimiters, but most LLMs (including ours)
+// emit \(…\) and \[…\] for inline / display math. Normalise on the way in so
+// KaTeX gets to render the equations instead of literal backslashes leaking
+// into the UI.
+function normalizeMathDelimiters(text: string): string {
+  return text
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_, body: string) => `$$${body}$$`)
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_, body: string) => `$${body}$`);
+}
+
 function InLectureMessage({ message }: { message: Message }): React.ReactNode {
   return (
     <div className="text-primary py-12 text-xl leading-10">
-      {message.content}
+      <ReactMarkdown
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
+          p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
+          strong: ({ children }) => (
+            <strong className="font-semibold">{children}</strong>
+          ),
+          em: ({ children }) => <em className="italic">{children}</em>,
+          ul: ({ children }) => (
+            <ul className="mb-4 list-disc pl-8 last:mb-0">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="mb-4 list-decimal pl-8 last:mb-0">{children}</ol>
+          ),
+          li: ({ children }) => <li className="mb-1">{children}</li>,
+          code: ({ children }) => (
+            <code className="bg-primary-tint/50 rounded px-1.5 py-0.5 font-mono text-base">
+              {children}
+            </code>
+          ),
+          h1: ({ children }) => (
+            <h1 className="mb-3 text-2xl font-semibold">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="mb-3 text-xl font-semibold">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="mb-2 text-lg font-semibold">{children}</h3>
+          ),
+        }}
+      >
+        {normalizeMathDelimiters(message.content)}
+      </ReactMarkdown>
     </div>
   );
 }
