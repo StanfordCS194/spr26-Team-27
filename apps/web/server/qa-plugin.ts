@@ -63,6 +63,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
 
   const parsed = parseQaInput({
     t: url.searchParams.get("t"),
+    f: url.searchParams.get("f"),
     question,
     transcript,
   });

@@ -1,4 +1,5 @@
 import { useChatContext } from "@/hooks/useChat";
+import { useLiveTranscriptContext } from "@/hooks/useLiveTranscript";
 import type { Message } from "@/types/messages";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
@@ -18,6 +19,19 @@ const QUICK_PROMPTS: readonly string[] = [
   "What just happened?",
 ];
 
+// Quick prompts are scoped to the most recent slice of lecture so the answer
+// stays grounded in what the student actually just experienced. Two minutes
+// matches the PRD framing of "what just happened" / "re-explain that".
+const QUICK_PROMPT_WINDOW_SECONDS = 120;
+
+function parseTimestampToSeconds(ts: string): number {
+  const parts = ts.split(":").map((p) => Number.parseInt(p, 10));
+  if (parts.some(Number.isNaN)) return 0;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return 0;
+}
+
 interface DeferredQuestion {
   id: string;
   content: string;
@@ -31,6 +45,7 @@ function AskPage(): React.ReactNode {
     from: "/learn/$courseId/lectures/$lectureId",
   });
   const { messages, streaming, error, send } = useChatContext();
+  const { lines: transcriptLines } = useLiveTranscriptContext();
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -88,9 +103,21 @@ function AskPage(): React.ReactNode {
   };
 
   // Quick prompts always send immediately — the whole point is one tap → answer.
+  // They also narrow the model's grounding window to the last 2 minutes of
+  // revealed transcript: the chips are framed around "what just happened",
+  // and pulling in the entire lecture would dilute that.
   const sendQuickPrompt = (prompt: string): void => {
     if (streaming) return;
-    send(prompt);
+    const lastLine = transcriptLines[transcriptLines.length - 1];
+    if (!lastLine) {
+      send(prompt);
+      return;
+    }
+    const latestSec = parseTimestampToSeconds(lastLine.timestamp);
+    // `+1` so the latest line itself is included (server uses strict `<`).
+    const uptoSeconds = latestSec + 1;
+    const fromSeconds = Math.max(0, latestSec - QUICK_PROMPT_WINDOW_SECONDS);
+    send(prompt, { fromSeconds, uptoSeconds });
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {

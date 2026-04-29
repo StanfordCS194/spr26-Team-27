@@ -16,15 +16,20 @@ import { iterSse, safeJson } from "@/lib/sse";
 export interface StreamQaArgs {
   question: string;
   uptoSeconds: number;
+  /** optional lower-bound (seconds) — useful for windowed quick prompts */
+  fromSeconds?: number;
   signal?: AbortSignal;
 }
 
 export async function* streamQa({
   question,
   uptoSeconds,
+  fromSeconds,
   signal,
 }: StreamQaArgs): AsyncGenerator<string, void, void> {
-  const res = await fetch(`/api/qa?t=${encodeURIComponent(uptoSeconds)}`, {
+  const params = new URLSearchParams({ t: String(uptoSeconds) });
+  if (fromSeconds !== undefined) params.set("f", String(fromSeconds));
+  const res = await fetch(`/api/qa?${params.toString()}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ question }),

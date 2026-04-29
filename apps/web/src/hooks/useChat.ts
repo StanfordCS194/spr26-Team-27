@@ -19,11 +19,18 @@ import { createContext, use, useCallback, useRef, useState } from "react";
 const TYPEWRITER_TICK_MS = 25;
 const TYPEWRITER_TARGET_TICKS = 20;
 
+export interface SendOptions {
+  /** lower-bound (seconds). When set, the model only sees lines >= this. */
+  fromSeconds?: number;
+  /** upper-bound (seconds). Defaults to "everything we have" if omitted. */
+  uptoSeconds?: number;
+}
+
 export interface UseChatResult {
   messages: Message[];
   streaming: boolean;
   error: string | null;
-  send: (question: string) => void;
+  send: (question: string, opts?: SendOptions) => void;
 }
 
 export function useChat(lectureId: string): UseChatResult {
@@ -33,7 +40,7 @@ export function useChat(lectureId: string): UseChatResult {
   const abortRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
-    (question: string): void => {
+    (question: string, opts?: SendOptions): void => {
       const trimmed = question.trim();
       // v1 UX: block new sends while a stream is in flight. Allowing
       // mid-stream interruption is possible (we already track an abort
@@ -54,12 +61,13 @@ export function useChat(lectureId: string): UseChatResult {
         { id: assistantId, content: "", role: "inLecture", lectureId },
       ]);
 
-      void run(ac.signal, assistantId, trimmed);
+      void run(ac.signal, assistantId, trimmed, opts);
 
       async function run(
         signal: AbortSignal,
         targetId: string,
         q: string,
+        windowOpts?: SendOptions,
       ): Promise<void> {
         const buf = { text: "" };
         let streamDone = false;
@@ -97,13 +105,14 @@ export function useChat(lectureId: string): UseChatResult {
         });
 
         try {
-          // TODO(playback): replace Number.MAX_SAFE_INTEGER with the current
-          // video position once a player is wired up. The server filters
-          // transcript lines by `timestamp < uptoSeconds`, so this value
-          // currently includes the entire transcript.
+          // Default to the entire transcript (no upper bound). Callers can
+          // narrow with windowOpts — e.g. quick prompts pass the last
+          // 2 minutes of revealed transcript so the answer stays scoped to
+          // recent lecture content.
           for await (const delta of streamQa({
             question: q,
-            uptoSeconds: Number.MAX_SAFE_INTEGER,
+            uptoSeconds: windowOpts?.uptoSeconds ?? Number.MAX_SAFE_INTEGER,
+            fromSeconds: windowOpts?.fromSeconds,
             signal,
           })) {
             buf.text += delta;
