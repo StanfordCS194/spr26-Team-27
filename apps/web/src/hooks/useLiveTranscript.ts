@@ -1,15 +1,17 @@
-import { transcript } from "@/data/transcript";
+import transcript from "@/data/transcript.json";
 import type { transcriptItem } from "@/types/transcript";
 import { createContext, use, useEffect, useState } from "react";
 
 // Reveals the static transcript one line at a time so the UI animates as if
 // captions were arriving live. No server stream involved — this is purely a
-// client-side drip over the existing data/transcript.ts array. Swap this for
-// a real live source later by replacing the body of the effect.
+// client-side drip over the existing data/transcript.json array. Swap this
+// for a real live source later by replacing the body of the effect.
 
-const REVEAL_INTERVAL_MS = 800;
+const REVEAL_INTERVAL_MS = 1600;
 
-const visibleLines = transcript.filter((l) => l.content.trim() !== "");
+const visibleLines: transcriptItem[] = transcript.filter(
+  (l) => l.content.trim() !== "",
+);
 
 export interface UseLiveTranscriptResult {
   lines: transcriptItem[];
