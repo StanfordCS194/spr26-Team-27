@@ -11,6 +11,14 @@ import { createContext, use, useCallback, useRef, useState } from "react";
 // both sending history up and re-templating the server prompt — defer until
 // it's actually needed.
 
+// Typewriter knobs: incoming model deltas are buffered, then revealed at a
+// steady cadence so wildly variable token sizes don't cause visible
+// stutter/fragmentation. Per tick we drain ~1/TARGET_TICKS of the current
+// buffer — small buffer reveals slowly, large buffer drains fast so we never
+// fall too far behind the stream.
+const TYPEWRITER_TICK_MS = 25;
+const TYPEWRITER_TARGET_TICKS = 20;
+
 export interface UseChatResult {
   messages: Message[];
   streaming: boolean;
@@ -53,6 +61,41 @@ export function useChat(lectureId: string): UseChatResult {
         targetId: string,
         q: string,
       ): Promise<void> {
+        const buf = { text: "" };
+        let streamDone = false;
+
+        // Typewriter: drains buf.text into the assistant message at a steady
+        // tick, separately from the (bursty) network delta loop below. Runs
+        // in parallel — settles when stream is done AND buffer is empty, or
+        // immediately on abort.
+        const drain = new Promise<void>((resolve) => {
+          const timer = window.setInterval(() => {
+            if (signal.aborted) {
+              window.clearInterval(timer);
+              resolve();
+              return;
+            }
+            if (buf.text.length === 0) {
+              if (streamDone) {
+                window.clearInterval(timer);
+                resolve();
+              }
+              return;
+            }
+            const chunkSize = Math.max(
+              1,
+              Math.ceil(buf.text.length / TYPEWRITER_TARGET_TICKS),
+            );
+            const chunk = buf.text.slice(0, chunkSize);
+            buf.text = buf.text.slice(chunkSize);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === targetId ? { ...m, content: m.content + chunk } : m,
+              ),
+            );
+          }, TYPEWRITER_TICK_MS);
+        });
+
         try {
           // TODO(playback): replace Number.MAX_SAFE_INTEGER with the current
           // video position once a player is wired up. The server filters
@@ -63,20 +106,22 @@ export function useChat(lectureId: string): UseChatResult {
             uptoSeconds: Number.MAX_SAFE_INTEGER,
             signal,
           })) {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === targetId ? { ...m, content: m.content + delta } : m,
-              ),
-            );
+            buf.text += delta;
           }
         } catch (err) {
-          if (signal.aborted) return;
-          setError(err instanceof Error ? err.message : "request failed");
+          if (!signal.aborted) {
+            setError(err instanceof Error ? err.message : "request failed");
+          }
         } finally {
-          // If we were aborted, a newer send already flipped streaming back
-          // on — don't clobber it.
-          if (!signal.aborted) setStreaming(false);
+          streamDone = true;
         }
+
+        // Wait for the typewriter to finish revealing whatever's buffered so
+        // the input doesn't re-enable mid-display.
+        await drain;
+        // If we were aborted, a newer send already flipped streaming back
+        // on — don't clobber it.
+        if (!signal.aborted) setStreaming(false);
       }
     },
     [lectureId, streaming],
