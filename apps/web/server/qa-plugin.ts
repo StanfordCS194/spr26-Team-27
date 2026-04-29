@@ -79,12 +79,21 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
   res.setHeader("x-accel-buffering", "no");
   res.flushHeaders?.();
 
+  // Bail out cleanly if the client disconnects mid-stream so we stop
+  // generating tokens into a closed socket.
+  const ac = new AbortController();
+  req.on("close", () => ac.abort());
+
   try {
-    for await (const delta of streamAnswer(parsed)) {
+    for await (const delta of streamAnswer({
+      ...parsed,
+      abortSignal: ac.signal,
+    })) {
       writeSseEvent(res, { delta });
     }
     writeSseEvent(res, "[DONE]", "done");
   } catch (err) {
+    if (ac.signal.aborted) return;
     writeSseEvent(
       res,
       { error: err instanceof Error ? err.message : "internal error" },

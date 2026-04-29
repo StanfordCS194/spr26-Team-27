@@ -5,6 +5,14 @@ import { streamText, type LanguageModel } from "ai";
 export const ANTHROPIC_MODEL = "claude-opus-4-7";
 export const OPENAI_MODEL = "gpt-5.5";
 
+// Mocking is the default while we don't have model keys plumbed everywhere.
+// Set QA_MOCK=0 (and provide a provider key) to use the real model.
+const MOCK_ENABLED = process.env.QA_MOCK !== "0";
+const MOCK_ANSWER = "Here is an answer to your question for example.";
+// Stream the canned answer in small chunks so the SSE pipeline behaves the
+// same as a real model — the streaming UX is visible, abort works, etc.
+const MOCK_CHUNK_MS = 60;
+
 function selectModel(): LanguageModel {
   if (process.env.ANTHROPIC_API_KEY) return anthropic(ANTHROPIC_MODEL);
   if (process.env.OPENAI_API_KEY) return openai(OPENAI_MODEL);
@@ -33,6 +41,7 @@ export interface AnswerQuestionInput {
   /** include only transcript lines whose timestamp (in seconds) is < this value */
   uptoSeconds: number;
   question: string;
+  abortSignal?: AbortSignal;
 }
 
 const SYSTEM_PROMPT =
@@ -60,13 +69,39 @@ Question: ${question}`;
 export async function* streamAnswer(
   input: AnswerQuestionInput,
 ): AsyncIterable<string> {
+  if (MOCK_ENABLED) {
+    yield* mockAnswer(input.abortSignal);
+    return;
+  }
+
   const result = streamText({
     model: selectModel(),
     system: SYSTEM_PROMPT,
     prompt: buildPrompt(input),
     temperature: 0,
+    abortSignal: input.abortSignal,
   });
   for await (const delta of result.textStream) {
     yield delta;
   }
+}
+
+async function* mockAnswer(
+  signal?: AbortSignal,
+): AsyncGenerator<string, void, void> {
+  for (const chunk of MOCK_ANSWER.match(/\S+\s*/g) ?? []) {
+    if (signal?.aborted) return;
+    await abortableSleep(MOCK_CHUNK_MS, signal);
+    yield chunk;
+  }
+}
+
+function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const t = setTimeout(resolve, ms);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(t);
+      resolve();
+    });
+  });
 }

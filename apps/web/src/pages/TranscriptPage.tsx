@@ -1,7 +1,6 @@
-import { transcript } from "@/data/transcript";
-import type { transcriptItem } from "@/types/transcript";
+import { useLiveTranscriptContext } from "@/hooks/useLiveTranscript";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MdOutlineArrowOutward } from "react-icons/md";
 
 function TranscriptPage() {
@@ -12,14 +11,25 @@ function TranscriptPage() {
     from: "/learn/$courseId/lectures/$lectureId",
   });
   const navigate = useNavigate();
+  const { lines, done, error } = useLiveTranscriptContext();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Stick to the bottom as new transcript lines land (mirrors how a real
+  // live caption feed would behave). Only auto-scroll if the user hasn't
+  // scrolled away.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
+    if (nearBottom) el.scrollTo({ top: el.scrollHeight });
+  }, [lines]);
 
   return (
-    <div className="bg-primary-bg flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-12">
-      {transcript.map((item: transcriptItem) => {
-        if (item.content.trim() === "") {
-          return null;
-        }
-
+    <div
+      ref={scrollRef}
+      className="bg-primary-bg flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-12"
+    >
+      {lines.map((item) => {
         const isSelected = selectedTimestamp === item.timestamp;
 
         return (
@@ -59,6 +69,19 @@ function TranscriptPage() {
           </div>
         );
       })}
+
+      {/* Live indicator while the mock stream is still emitting frames. */}
+      {!done && !error && (
+        <div className="flex items-center gap-2 pt-2 text-sm text-olive-400">
+          <span className="bg-primary-accent inline-block h-2 w-2 animate-pulse rounded-full" />
+          live
+        </div>
+      )}
+      {error && (
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
