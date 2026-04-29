@@ -2,14 +2,37 @@ import SidebarContext from "@/contexts/SidebarContext";
 import { lectures } from "@/data/lectures";
 import type { Lecture } from "@/types/lectures";
 import { Link, useParams } from "@tanstack/react-router";
-import { use } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { IoIosArrowBack, IoIosMenu } from "react-icons/io";
+import { MdCheckCircle, MdHelpOutline } from "react-icons/md";
 
-function Topbar() {
+const CONFIRMATION_MS = 4000;
+
+function Topbar(): React.ReactNode {
   const { courseId, lectureId } = useParams({
     from: "/learn/$courseId/lectures/$lectureId",
   });
   const { sidebarOpen, setSidebarOpen } = use(SidebarContext)!;
+  const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const onLost = (): void => {
+    // TODO(backend): POST to a "lost-signal" endpoint so the professor view
+    // can aggregate confused students. For now the button is local-only —
+    // showing the confirmation lets students still feel acknowledged.
+    setShowConfirmation(true);
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => {
+      setShowConfirmation(false);
+      timerRef.current = null;
+    }, CONFIRMATION_MS);
+  };
 
   return (
     <div className="border-divider flex shrink-0 items-center justify-between border-b p-6">
@@ -37,27 +60,54 @@ function Topbar() {
         </p>
       </div>
 
-      <div className="flex gap-6 lg:hidden">
-        <Link
-          to="/learn/$courseId/lectures/$lectureId/ask"
-          params={{ courseId, lectureId }}
-          className="py-2 text-lg"
-          activeProps={{
-            className: "border-b-3 py-2 border-primary-accent",
-          }}
-        >
-          Ask
-        </Link>
-        <Link
-          to="/learn/$courseId/lectures/$lectureId/transcript"
-          params={{ courseId, lectureId }}
-          className="py-2 text-lg"
-          activeProps={{
-            className: "border-b-3 py-2 border-primary-accent",
-          }}
-        >
-          Transcript
-        </Link>
+      <div className="flex items-center gap-6">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={onLost}
+            aria-label="I'm lost — let the professor know"
+            className="bg-primary-accent flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-base font-medium text-white shadow-sm transition"
+          >
+            <MdHelpOutline className="h-5 w-5" />
+            <span className="hidden sm:inline">I'm lost</span>
+          </button>
+          {showConfirmation && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="bg-primary-contr border-divider text-primary absolute top-full right-0 z-50 mt-2 flex w-72 items-start gap-2 rounded-lg border p-3 text-sm shadow-lg"
+            >
+              <MdCheckCircle className="text-primary-accent mt-0.5 h-5 w-5 shrink-0" />
+              <span>
+                Got it — the professor has been notified that some students are
+                confused.
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-6 lg:hidden">
+          <Link
+            to="/learn/$courseId/lectures/$lectureId/ask"
+            params={{ courseId, lectureId }}
+            className="py-2 text-lg"
+            activeProps={{
+              className: "border-b-3 py-2 border-primary-accent",
+            }}
+          >
+            Ask
+          </Link>
+          <Link
+            to="/learn/$courseId/lectures/$lectureId/transcript"
+            params={{ courseId, lectureId }}
+            className="py-2 text-lg"
+            activeProps={{
+              className: "border-b-3 py-2 border-primary-accent",
+            }}
+          >
+            Transcript
+          </Link>
+        </div>
       </div>
     </div>
   );

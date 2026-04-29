@@ -3,21 +3,27 @@ import { openai } from "@ai-sdk/openai";
 import { streamText, type LanguageModel } from "ai";
 
 export const ANTHROPIC_MODEL = "claude-opus-4-7";
-export const OPENAI_MODEL = "gpt-5.5";
+export const OPENAI_MODEL = "gpt-4o-mini";
 
-// Mocking is the default while we don't have model keys plumbed everywhere.
-// Set QA_MOCK=0 (and provide a provider key) to use the real model.
-const MOCK_ENABLED = process.env.QA_MOCK !== "0";
+// Mocking is the default only when no provider key is configured. Once a key
+// is present we switch to the real model unless QA_MOCK=1 is set explicitly.
+// Evaluated per-request so env vars loaded after this module is imported
+// (e.g. by vite.config.ts before plugins run) are still picked up.
+function isMockEnabled(): boolean {
+  if (process.env.QA_MOCK === "0") return false;
+  if (process.env.QA_MOCK === "1") return true;
+  return !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY;
+}
 const MOCK_ANSWER = "Here is an answer to your question for example.";
 // Stream the canned answer in small chunks so the SSE pipeline behaves the
 // same as a real model — the streaming UX is visible, abort works, etc.
 const MOCK_CHUNK_MS = 60;
 
 function selectModel(): LanguageModel {
-  if (process.env.ANTHROPIC_API_KEY) return anthropic(ANTHROPIC_MODEL);
   if (process.env.OPENAI_API_KEY) return openai(OPENAI_MODEL);
+  if (process.env.ANTHROPIC_API_KEY) return anthropic(ANTHROPIC_MODEL);
   throw new Error(
-    "set ANTHROPIC_API_KEY or OPENAI_API_KEY to use the QA endpoint",
+    "set OPENAI_API_KEY or ANTHROPIC_API_KEY to use the QA endpoint",
   );
 }
 
@@ -69,7 +75,7 @@ Question: ${question}`;
 export async function* streamAnswer(
   input: AnswerQuestionInput,
 ): AsyncIterable<string> {
-  if (MOCK_ENABLED) {
+  if (isMockEnabled()) {
     yield* mockAnswer(input.abortSignal);
     return;
   }
