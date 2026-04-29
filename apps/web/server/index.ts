@@ -13,9 +13,19 @@ import { streamSSE } from "hono/streaming";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = resolve(HERE, "..");
+const REPO_ROOT = resolve(APP_ROOT, "..", "..");
 const TRANSCRIPT_PATH = resolve(APP_ROOT, "src", "data", "transcript.json");
 const DIST_DIR = resolve(APP_ROOT, "dist");
 const INDEX_HTML = resolve(DIST_DIR, "index.html");
+
+// Load packages/ai-service/.env into process.env so the QA handler can find
+// ANTHROPIC_API_KEY / OPENAI_API_KEY (or QA_MOCK). Real env vars (e.g. set
+// by the host) win — loadEnvFile doesn't override.
+try {
+  process.loadEnvFile(resolve(REPO_ROOT, "packages", "ai-service", ".env"));
+} catch {
+  // .env is optional in environments where vars come from the host.
+}
 
 // serveStatic resolves `root` relative to cwd; pin it so the script works
 // regardless of where it was launched from.
@@ -56,11 +66,16 @@ app.all("/api/qa", async (c) => {
   c.header("x-accel-buffering", "no");
   return streamSSE(c, async (stream) => {
     try {
-      for await (const delta of streamAnswer(parsed)) {
+      for await (const delta of streamAnswer({
+        ...parsed,
+        abortSignal: c.req.raw.signal,
+      })) {
         await stream.writeSSE({ data: JSON.stringify({ delta }) });
       }
       await stream.writeSSE({ event: "done", data: '"[DONE]"' });
     } catch (err) {
+      // Client aborts surface as AbortError — don't treat as a server error.
+      if (c.req.raw.signal.aborted) return;
       await stream.writeSSE({
         event: "error",
         data: JSON.stringify({

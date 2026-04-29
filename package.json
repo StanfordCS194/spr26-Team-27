@@ -10,8 +10,12 @@
   "scripts": {
     "dev": "npm run dev -w @spr26/web",
     "build": "npm run build --workspaces --if-present",
+    "start": "npm start -w @spr26/web",
     "format": "prettier . --write",
     "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=22"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
