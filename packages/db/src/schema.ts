@@ -64,7 +64,7 @@ export const users = pgTable(
       .defaultNow(),
   },
   (t) => [unique("users_email_unique").on(t.email)],
-);
+).enableRLS();
 
 export const courses = pgTable("courses", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -80,7 +80,7 @@ export const courses = pgTable("courses", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const enrollments = pgTable(
   "enrollments",
@@ -97,7 +97,7 @@ export const enrollments = pgTable(
       .defaultNow(),
   },
   (t) => [unique("enrollments_user_course_unique").on(t.userId, t.courseId)],
-);
+).enableRLS();
 
 // Live lecture instance ----------------------------------------------------
 
@@ -115,7 +115,7 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 // Either an authenticated user OR a browser-local anonymous identity attended
 // this session. Anonymous students don't get a `users` row (PRD F4 stores
@@ -153,7 +153,7 @@ export const sessionParticipants = pgTable(
       t.anonymousClientId,
     ),
   ],
-);
+).enableRLS();
 
 // Transcript & grounding ---------------------------------------------------
 
@@ -177,7 +177,7 @@ export const transcriptItems = pgTable(
       t.sequence,
     ),
   ],
-);
+).enableRLS();
 
 export const courseMaterials = pgTable("course_materials", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -190,7 +190,7 @@ export const courseMaterials = pgTable("course_materials", {
   uploadedAt: timestamp("uploaded_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const courseMaterialChunks = pgTable(
   "course_material_chunks",
@@ -209,7 +209,7 @@ export const courseMaterialChunks = pgTable(
       t.chunkIndex,
     ),
   ],
-);
+).enableRLS();
 
 // Q&A ----------------------------------------------------------------------
 
@@ -230,7 +230,7 @@ export const questions = pgTable("questions", {
     { onDelete: "set null" },
   ),
   askedAt: timestamp("asked_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const answers = pgTable(
   "answers",
@@ -247,7 +247,7 @@ export const answers = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (t) => [unique("answers_question_unique").on(t.questionId)],
-);
+).enableRLS();
 
 // PRD Feature 11: every AI response cites the transcript segment OR uploaded
 // material it grounds in. Modelled with two nullable FKs + a CHECK that
@@ -279,7 +279,7 @@ export const citations = pgTable(
       sql`(${t.transcriptItemId} IS NOT NULL) <> (${t.courseMaterialChunkId} IS NOT NULL)`,
     ),
   ],
-);
+).enableRLS();
 
 // Engagement signals -------------------------------------------------------
 
@@ -306,7 +306,7 @@ export const bookmarks = pgTable(
       t.transcriptItemId,
     ),
   ],
-);
+).enableRLS();
 
 export const quickPromptSignals = pgTable("quick_prompt_signals", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -326,7 +326,7 @@ export const quickPromptSignals = pgTable("quick_prompt_signals", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 // Instructor-driven engagement --------------------------------------------
 
@@ -343,7 +343,7 @@ export const conceptChecks = pgTable("concept_checks", {
     .notNull()
     .defaultNow(),
   closedAt: timestamp("closed_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 export const conceptCheckResponses = pgTable(
   "concept_check_responses",
@@ -366,7 +366,7 @@ export const conceptCheckResponses = pgTable(
       t.participantId,
     ),
   ],
-);
+).enableRLS();
 
 // Type exports for use in app code ----------------------------------------
 
