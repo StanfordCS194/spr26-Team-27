@@ -1,105 +1,53 @@
-import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { resolve } from "node:path";
-import {
-  parseQaInput,
-  streamAnswer,
-  type TranscriptItem,
-} from "@spr26/ai-service";
+import { Readable } from "node:stream";
 import type { Plugin } from "vite";
+import { app } from "./app.ts";
 
-const TRANSCRIPT_PATH = resolve(
-  import.meta.dirname,
-  "..",
-  "src",
-  "data",
-  "transcript.json",
-);
-
-async function readJsonBody(req: IncomingMessage): Promise<unknown> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(chunk as Buffer);
-  const raw = Buffer.concat(chunks).toString("utf8");
-  if (!raw) return {};
-  return JSON.parse(raw);
-}
-
-function sendJson(res: ServerResponse, status: number, body: unknown) {
-  res.statusCode = status;
-  res.setHeader("content-type", "application/json");
-  res.end(JSON.stringify(body));
-}
-
-function writeSseEvent(
-  res: ServerResponse,
-  data: unknown,
-  event?: string,
-): void {
-  if (event) res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
-}
-
+// Vite middleware that delegates `/api/*` to the same Hono app prod uses, so
+// route definitions live in one place and dev/prod parity is real.
 async function handle(req: IncomingMessage, res: ServerResponse) {
-  const url = new URL(req.url ?? "/", "http://localhost");
+  const host = req.headers.host ?? "localhost";
+  const url = `http://${host}${req.url ?? "/"}`;
 
-  let question: string | null;
-  if (req.method === "GET") {
-    question = url.searchParams.get("q");
-  } else if (req.method === "POST") {
-    try {
-      const body = (await readJsonBody(req)) as { question?: string };
-      question = body.question ?? null;
-    } catch {
-      sendJson(res, 400, { error: "invalid JSON body" });
-      return;
-    }
-  } else {
-    sendJson(res, 405, { error: "method not allowed" });
-    return;
+  const headers = new Headers();
+  for (const [k, v] of Object.entries(req.headers)) {
+    if (v == null) continue;
+    if (Array.isArray(v)) for (const item of v) headers.append(k, item);
+    else headers.set(k, v);
   }
 
-  const raw = await readFile(TRANSCRIPT_PATH, "utf8");
-  const transcript = JSON.parse(raw) as TranscriptItem[];
-
-  const parsed = parseQaInput({
-    t: url.searchParams.get("t"),
-    question,
-    transcript,
-  });
-  if (!parsed.ok) {
-    sendJson(res, parsed.status, { error: parsed.error });
-    return;
+  const init: RequestInit & { duplex?: "half" } = {
+    method: req.method,
+    headers,
+  };
+  if (req.method && req.method !== "GET" && req.method !== "HEAD") {
+    init.body = Readable.toWeb(req) as unknown as ReadableStream<Uint8Array>;
+    init.duplex = "half"; // required when streaming a body
   }
 
-  res.statusCode = 200;
-  res.setHeader("content-type", "text/event-stream");
-  res.setHeader("cache-control", "no-cache");
-  res.setHeader("connection", "keep-alive");
-  // Disable proxy buffering (nginx etc).
-  res.setHeader("x-accel-buffering", "no");
-  res.flushHeaders?.();
+  const response = await app.fetch(new Request(url, init));
 
-  try {
-    for await (const delta of streamAnswer(parsed)) {
-      writeSseEvent(res, { delta });
-    }
-    writeSseEvent(res, "[DONE]", "done");
-  } catch (err) {
-    writeSseEvent(
-      res,
-      { error: err instanceof Error ? err.message : "internal error" },
-      "error",
-    );
-  } finally {
+  res.statusCode = response.status;
+  response.headers.forEach((v, k) => res.setHeader(k, v));
+  if (!response.body) {
     res.end();
+    return;
   }
+  res.flushHeaders?.();
+  const reader = response.body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    res.write(value);
+  }
+  res.end();
 }
 
 export function qaApiPlugin(): Plugin {
   return {
-    name: "qa-api",
+    name: "api",
     configureServer(server) {
-      server.middlewares.use("/api/qa", (req, res, next) => {
+      server.middlewares.use("/api", (req, res, next) => {
         handle(req, res).catch(next);
       });
     },

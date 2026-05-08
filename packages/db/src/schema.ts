@@ -9,6 +9,7 @@ import {
   timestamp,
   unique,
   uuid,
+  vector,
 } from "drizzle-orm/pg-core";
 
 // Enums --------------------------------------------------------------------
@@ -167,6 +168,10 @@ export const transcriptItems = pgTable(
     sequence: integer("sequence").notNull(),
     timestampSeconds: integer("timestamp_seconds").notNull(),
     content: text("content").notNull(),
+    // Nullable so older rows / static-JSON seed flows survive the migration;
+    // retrieval queries filter `embedding IS NOT NULL`. Backfilled by the
+    // ingest route on insert and (later) a one-shot script for legacy rows.
+    embedding: vector("embedding", { dimensions: 1536 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -202,6 +207,7 @@ export const courseMaterialChunks = pgTable(
     chunkIndex: integer("chunk_index").notNull(),
     content: text("content").notNull(),
     pageNumber: integer("page_number"),
+    embedding: vector("embedding", { dimensions: 1536 }),
   },
   (t) => [
     unique("course_material_chunks_material_index_unique").on(

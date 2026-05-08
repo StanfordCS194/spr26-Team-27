@@ -1,2 +1,2 @@
 export * from "./qa.ts";
-export * from "./handler.ts";
+export * from "./embed.ts";
