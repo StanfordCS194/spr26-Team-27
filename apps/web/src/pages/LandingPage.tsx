@@ -17,9 +17,11 @@ function LandingPage() {
     <div className="bg-primary-contr flex flex-col items-center justify-center">
       {/* Navbar */}
 
-      <div className="border-divider flex w-full flex-1 items-center border-b px-6 py-4">
+      <div className="border-divider flex w-full flex-1 items-center justify-between border-b px-6 py-4">
         <img className="h-8" src={logoWithIcon} alt="InLecture Logo" />
-        <div></div>
+        <a href="/login" className="text-primary-accent text-sm font-semibold">
+          Instructor Login
+        </a>
       </div>
 
       {/* Hero */}
