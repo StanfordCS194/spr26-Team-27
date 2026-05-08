@@ -15,6 +15,13 @@
       "when": 1778128474524,
       "tag": "0001_enable_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778263305101,
+      "tag": "0002_omniscient_golden_guardian",
+      "breakpoints": true
     }
   ]
 }
