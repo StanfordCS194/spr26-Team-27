@@ -10,6 +10,11 @@ import {
 } from "@spr26/ai-service";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
+import auth from "./auth.ts";
+import instructorApi from "./instructor-api.ts";
+import slugApi from "./slug-api.ts";
+import liveTranscript from "./live-transcript.ts";
+import { handleUpgrade } from "./audio-ws.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = resolve(HERE, "..");
@@ -17,11 +22,14 @@ const TRANSCRIPT_PATH = resolve(APP_ROOT, "src", "data", "transcript.json");
 const DIST_DIR = resolve(APP_ROOT, "dist");
 const INDEX_HTML = resolve(DIST_DIR, "index.html");
 
-// serveStatic resolves `root` relative to cwd; pin it so the script works
-// regardless of where it was launched from.
 process.chdir(APP_ROOT);
 
 const app = new Hono();
+
+app.route("/api/auth", auth);
+app.route("/api/instructor", instructorApi);
+app.route("/api/teach", slugApi);
+app.route("/api/live-transcript", liveTranscript);
 
 app.all("/api/qa", async (c) => {
   const url = new URL(c.req.url);
@@ -73,13 +81,17 @@ app.all("/api/qa", async (c) => {
 
 app.use("/*", serveStatic({ root: "./dist" }));
 
-// SPA fallback for client-side routes.
 app.get("/*", async (c) => {
   const html = await readFile(INDEX_HTML, "utf8");
   return c.html(html);
 });
 
 const port = Number(process.env.PORT ?? 3000);
-serve({ fetch: app.fetch, port }, ({ port }) => {
+
+const server = serve({ fetch: app.fetch, port }, ({ port }) => {
   console.log(`server listening on http://localhost:${port}`);
+});
+
+server.on("upgrade", (req: any, socket: any, head: any) => {
+  handleUpgrade(req, socket, head);
 });
