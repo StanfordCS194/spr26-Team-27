@@ -16,6 +16,8 @@ export default function TranscriptPanel() {
   }>();
   const router = useRouter();
   const { lines } = useStudentSession();
+  // TODO: switch to useLiveTranscript(lecture.sessionId) for real RAG-time
+  // live updates once auth/session resolution lands.
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(
     null,
   );

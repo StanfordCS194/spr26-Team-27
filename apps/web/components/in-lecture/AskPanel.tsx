@@ -1,7 +1,12 @@
 "use client";
 
+import {
+  renderWithCitations,
+  SourcesTray,
+} from "@/components/in-lecture/CitationPills";
 import { EmptyState } from "@/components/in-lecture/EmptyState";
-import { useStudentSession } from "@/components/in-lecture/StudentSessionContext";
+import { ToolCallChip } from "@/components/in-lecture/ToolCallChip";
+import { lectureById } from "@/data/lectures";
 import { useChat } from "@/lib/useChat";
 import type { Message } from "@/types/messages";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -30,21 +35,9 @@ const QUICK_PROMPTS: readonly string[] = [
   "What just happened?",
 ];
 
-// Quick prompts narrow grounding to "what just happened" so the answer stays
-// pinned to the last couple minutes of revealed transcript.
-const QUICK_PROMPT_WINDOW_SECONDS = 120;
-
 interface DeferredQuestion {
   id: string;
   content: string;
-}
-
-function parseTimestampToSeconds(ts: string): number {
-  const parts = ts.split(":").map((p) => Number.parseInt(p, 10));
-  if (parts.some(Number.isNaN)) return 0;
-  if (parts.length === 2) return parts[0] * 60 + parts[1];
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  return 0;
 }
 
 export default function AskPanel() {
@@ -53,14 +46,15 @@ export default function AskPanel() {
   const router = useRouter();
   const q = searchParams.get("q") ?? "";
 
-  const { messages, streaming, error, send } = useChat(lectureId ?? "demo");
-  const { lines } = useStudentSession();
+  const lecture = lectureId ? lectureById(lectureId) : undefined;
+  const sessionId = lecture?.sessionId ?? "";
+  const { messages, streaming, error, send } = useChat(
+    lectureId ?? "demo",
+    sessionId,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Local draft; seeded from `?q=` when arriving from the transcript "Ask"
-  // button. Typing only updates local state — round-tripping through the URL
-  // was dropping characters.
   const [draft, setDraft] = useState<string>(q);
   const [prevQ, setPrevQ] = useState<string>(q);
   if (q !== prevQ) {
@@ -106,18 +100,11 @@ export default function AskPanel() {
     clearDraft();
   };
 
+  // Quick prompts no longer carry a hand-picked window — the model decides
+  // when to call get_recent vs search_lecture based on the phrasing.
   const sendQuickPrompt = (prompt: string) => {
     if (streaming) return;
-    const last = lines[lines.length - 1];
-    if (!last) {
-      send(prompt);
-      return;
-    }
-    const latestSec = parseTimestampToSeconds(last.timestamp);
-    send(prompt, {
-      uptoSeconds: latestSec + 1,
-      fromSeconds: Math.max(0, latestSec - QUICK_PROMPT_WINDOW_SECONDS),
-    });
+    send(prompt);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -231,56 +218,84 @@ function InLectureMessage({
   streaming: boolean;
 }): ReactNode {
   const hasContent = message.content.length > 0;
+  const tools = message.toolCalls ?? [];
+  if (!hasContent && tools.length === 0) {
+    return (
+      <div className="text-primary py-8 text-lg leading-9">
+        {streaming ? (
+          <span className="text-secondary inline-flex gap-1 text-base">
+            <span className="bg-secondary inline-block h-2 w-2 animate-pulse rounded-full" />
+            <span
+              className="bg-secondary inline-block h-2 w-2 animate-pulse rounded-full"
+              style={{ animationDelay: "120ms" }}
+            />
+            <span
+              className="bg-secondary inline-block h-2 w-2 animate-pulse rounded-full"
+              style={{ animationDelay: "240ms" }}
+            />
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  const prepped = normalizeMathDelimiters(message.content);
+  const cites = message.citations;
+
+  // ReactMarkdown emits text nodes as strings; swap citation markers inside
+  // each text node at render time.
+  const expandText = (children: ReactNode): ReactNode => {
+    if (typeof children === "string") return renderWithCitations(children, cites);
+    if (Array.isArray(children)) return children.map(expandText);
+    return children;
+  };
+
   return (
     <div className="text-primary py-8 text-lg leading-9">
-      {hasContent ? (
-        <ReactMarkdown
-          remarkPlugins={[remarkMath]}
-          rehypePlugins={[rehypeKatex]}
-          components={{
-            p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
-            strong: ({ children }) => (
-              <strong className="font-semibold">{children}</strong>
-            ),
-            em: ({ children }) => <em className="italic">{children}</em>,
-            ul: ({ children }) => (
-              <ul className="mb-4 list-disc pl-8 last:mb-0">{children}</ul>
-            ),
-            ol: ({ children }) => (
-              <ol className="mb-4 list-decimal pl-8 last:mb-0">{children}</ol>
-            ),
-            li: ({ children }) => <li className="mb-1">{children}</li>,
-            code: ({ children }) => (
-              <code className="bg-primary-tint/50 rounded px-1.5 py-0.5 font-mono text-base">
-                {children}
-              </code>
-            ),
-            h1: ({ children }) => (
-              <h1 className="mb-3 text-2xl font-semibold">{children}</h1>
-            ),
-            h2: ({ children }) => (
-              <h2 className="mb-3 text-xl font-semibold">{children}</h2>
-            ),
-            h3: ({ children }) => (
-              <h3 className="mb-2 text-lg font-semibold">{children}</h3>
-            ),
-          }}
-        >
-          {normalizeMathDelimiters(message.content)}
-        </ReactMarkdown>
-      ) : streaming ? (
-        <span className="text-secondary inline-flex gap-1 text-base">
-          <span className="bg-secondary inline-block h-2 w-2 animate-pulse rounded-full" />
-          <span
-            className="bg-secondary inline-block h-2 w-2 animate-pulse rounded-full"
-            style={{ animationDelay: "120ms" }}
-          />
-          <span
-            className="bg-secondary inline-block h-2 w-2 animate-pulse rounded-full"
-            style={{ animationDelay: "240ms" }}
-          />
-        </span>
+      {tools.length > 0 ? (
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {tools.map((t) => (
+            <ToolCallChip key={t.id} tool={t} />
+          ))}
+        </div>
       ) : null}
+      <ReactMarkdown
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
+          p: ({ children }) => (
+            <p className="mb-4 last:mb-0">{expandText(children)}</p>
+          ),
+          strong: ({ children }) => (
+            <strong className="font-semibold">{expandText(children)}</strong>
+          ),
+          em: ({ children }) => <em className="italic">{expandText(children)}</em>,
+          ul: ({ children }) => (
+            <ul className="mb-4 list-disc pl-8 last:mb-0">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="mb-4 list-decimal pl-8 last:mb-0">{children}</ol>
+          ),
+          li: ({ children }) => <li className="mb-1">{expandText(children)}</li>,
+          code: ({ children }) => (
+            <code className="bg-primary-tint/50 rounded px-1.5 py-0.5 font-mono text-base">
+              {children}
+            </code>
+          ),
+          h1: ({ children }) => (
+            <h1 className="mb-3 text-2xl font-semibold">{expandText(children)}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="mb-3 text-xl font-semibold">{expandText(children)}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="mb-2 text-lg font-semibold">{expandText(children)}</h3>
+          ),
+        }}
+      >
+        {prepped}
+      </ReactMarkdown>
+      <SourcesTray manifest={cites} />
     </div>
   );
 }
