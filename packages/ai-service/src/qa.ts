@@ -32,6 +32,8 @@ export interface AnswerQuestionInput {
   transcript: TranscriptItem[];
   /** include only transcript lines whose timestamp (in seconds) is < this value */
   uptoSeconds: number;
+  /** optional lower-bound (seconds); only lines >= this are included */
+  fromSeconds?: number;
   question: string;
 }
 
@@ -41,11 +43,15 @@ const SYSTEM_PROMPT =
 function buildPrompt({
   transcript,
   uptoSeconds,
+  fromSeconds,
   question,
 }: AnswerQuestionInput) {
-  const visible = transcript.filter(
-    (line) => parseTimestamp(line.timestamp) < uptoSeconds,
-  );
+  const visible = transcript.filter((line) => {
+    const t = parseTimestamp(line.timestamp);
+    if (t >= uptoSeconds) return false;
+    if (fromSeconds !== undefined && t < fromSeconds) return false;
+    return true;
+  });
   const transcriptText = visible
     .map((l) => `[${l.timestamp}] ${l.content}`)
     .join("\n");
