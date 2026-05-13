@@ -1,15 +1,14 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { transcriptItems } from "@spr26/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Receives a single ~8s audio chunk from the instructor's RecordButton, runs
 // speech-to-text, and inserts a transcript_items row. Supabase Realtime
-// publication on transcript_items pushes the new row to subscribed students.
+// publication on transcript_items pushes the row to subscribed clients.
 //
 // Whisper integration is stubbed — wire OPENAI_API_KEY then drop in the call.
-// Keeping the row-insert path live now so realtime can be exercised against
-// dummy transcripts in dev.
 export async function POST(req: Request) {
   const form = await req.formData();
   const sessionId = form.get("sessionId");
@@ -45,32 +44,26 @@ export async function POST(req: Request) {
   //   const { text } = await r.json();
   const text = `[stub transcript for chunk ${sequence} — wire Whisper to replace]`;
 
-  // Approximate timestamp using sequence × chunk duration (8s) for now; once
-  // the recorder reports a real wall-clock offset we'll thread it through.
+  // Approximate timestamp via sequence × chunk duration (8s); thread a real
+  // wall-clock offset through later.
   const timestampSeconds = sequence * 8;
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("transcript_items")
-    .insert({
-      session_id: sessionId,
+  const [row] = await db()
+    .insert(transcriptItems)
+    .values({
+      sessionId,
       sequence,
-      timestamp_seconds: timestampSeconds,
+      timestampSeconds,
       content: text,
     })
-    .select("id")
-    .single();
+    .returning({ id: transcriptItems.id });
 
-  if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-
-  // Fire-and-forget the embedding job. Don't block transcript broadcast on it.
+  // Fire-and-forget the embedding job. Don't block transcript broadcast.
   void fetch(new URL("/api/embed", req.url), {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ transcriptItemId: data.id }),
+    body: JSON.stringify({ transcriptItemId: row.id }),
   }).catch(() => {});
 
-  return Response.json({ id: data.id });
+  return Response.json({ id: row.id });
 }

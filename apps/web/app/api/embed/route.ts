@@ -1,11 +1,13 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { transcriptItems } from "@spr26/db";
+import { eq, isNull } from "drizzle-orm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Computes an embedding for one or more transcript_items rows and writes it
-// back. Caller passes either a specific id or omits both to backfill any rows
-// with NULL embedding. Stubbed for now — wire `embedMany` from `ai`.
+// Computes embeddings for transcript_items rows and writes them back.
+// Caller passes a specific id, or omits to backfill up to 50 NULL rows.
+// embedMany call is stubbed — wire `ai` + `@ai-sdk/openai` to enable.
 export async function POST(req: Request) {
   let payload: { transcriptItemId?: string } = {};
   try {
@@ -14,35 +16,35 @@ export async function POST(req: Request) {
     /* allow empty body */
   }
 
-  const supabase = createAdminClient();
-  const query = supabase
-    .from("transcript_items")
-    .select("id, content")
-    .is("embedding", null);
+  const where = payload.transcriptItemId
+    ? eq(transcriptItems.id, payload.transcriptItemId)
+    : isNull(transcriptItems.embedding);
 
-  const { data, error } = payload.transcriptItemId
-    ? await query.eq("id", payload.transcriptItemId)
-    : await query.limit(50);
+  const rows = await db()
+    .select({ id: transcriptItems.id, content: transcriptItems.content })
+    .from(transcriptItems)
+    .where(where)
+    .limit(payload.transcriptItemId ? 1 : 50);
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-  if (!data || data.length === 0) return Response.json({ embedded: 0 });
+  if (rows.length === 0) return Response.json({ embedded: 0 });
 
   // TODO(amrit): replace stub with:
   //   import { embedMany } from "ai";
   //   import { openai } from "@ai-sdk/openai";
   //   const { embeddings } = await embedMany({
   //     model: openai.embedding("text-embedding-3-small"),
-  //     values: data.map((r) => r.content),
+  //     values: rows.map((r) => r.content),
   //   });
-  const embeddings = data.map(() => Array.from({ length: 1536 }, () => 0));
+  const embeddings: number[][] = rows.map(() =>
+    Array.from({ length: 1536 }, () => 0),
+  );
 
-  for (let i = 0; i < data.length; i++) {
-    const vec = `[${embeddings[i].join(",")}]`;
-    await supabase
-      .from("transcript_items")
-      .update({ embedding: vec })
-      .eq("id", data[i].id);
+  for (let i = 0; i < rows.length; i++) {
+    await db()
+      .update(transcriptItems)
+      .set({ embedding: embeddings[i] })
+      .where(eq(transcriptItems.id, rows[i].id));
   }
 
-  return Response.json({ embedded: data.length });
+  return Response.json({ embedded: rows.length });
 }
