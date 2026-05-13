@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 .vite
+.next
+.vercel
+next-env.d.ts
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -23,8 +29,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# SQLite
-*.db
-*.db-journal
-*.db-wal
+*.tsbuildinfo
