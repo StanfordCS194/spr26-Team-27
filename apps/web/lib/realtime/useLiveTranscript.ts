@@ -13,13 +13,18 @@ interface DbRow {
 
 function rowToItem(
   row: DbRow,
-): TranscriptItem & { id: string; sequence: number } {
+): TranscriptItem & {
+  id: string;
+  sequence: number;
+  timestampSeconds: number;
+} {
   const m = Math.floor(row.timestamp_seconds / 60);
   const s = row.timestamp_seconds % 60;
   return {
     id: row.id,
     sequence: row.sequence,
-    timestamp: `${m}:${String(s).padStart(2, "0")}`,
+    timestamp: `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`,
+    timestampSeconds: row.timestamp_seconds,
     content: row.content,
   };
 }
@@ -28,7 +33,11 @@ function rowToItem(
 // plus any inserts that arrive over Supabase Realtime, sorted by sequence.
 export function useLiveTranscript(sessionId: string | null) {
   const [items, setItems] = useState<
-    (TranscriptItem & { id: string; sequence: number })[]
+    (TranscriptItem & {
+      id: string;
+      sequence: number;
+      timestampSeconds: number;
+    })[]
   >([]);
 
   useEffect(() => {

@@ -1,7 +1,8 @@
 "use client";
 
+import { AdvancedDrawer } from "@/components/instructor/AdvancedDrawer";
+import { useRecordingPending } from "@/components/instructor/RecordingPendingContext";
 import { Badge } from "@/components/ui/Badge";
-import { endSession, startSession } from "@/lib/actions/instructor";
 import { useLiveConfusion } from "@/lib/realtime/useLiveConfusion";
 import { useLiveQuestions } from "@/lib/realtime/useLiveQuestions";
 import { useLiveTranscript } from "@/lib/realtime/useLiveTranscript";
@@ -14,9 +15,10 @@ import {
   MdFiberManualRecord,
   MdFlagCircle,
   MdStop,
+  MdTune,
 } from "react-icons/md";
 
-const CHUNK_MS = 8000;
+const CHUNK_MS = 10000;
 
 type Status = "idle" | "starting" | "recording" | "stopping" | "error";
 
@@ -45,6 +47,7 @@ export function SessionBar({
   const [now, setNow] = useState<number>(() => 0);
   const [copied, setCopied] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const seqRef = useRef(0);
@@ -57,6 +60,10 @@ export function SessionBar({
     confusion.re_explain +
     confusion.what_just_happened +
     confusion.give_example;
+  const { add: addPending, remove: removePending } = useRecordingPending();
+  // Re-keys the chunk-progress strip whenever a chunk flushes, restarting
+  // its CSS animation.
+  const [chunkTick, setChunkTick] = useState(0);
 
   useEffect(() => {
     if (status !== "recording") return;
@@ -65,8 +72,12 @@ export function SessionBar({
     return () => window.clearInterval(id);
   }, [status]);
 
+
+  const activeRef = useRef(false);
+
   const stop = useCallback(() => {
     setStatus("stopping");
+    activeRef.current = false;
     recorderRef.current?.stop();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     recorderRef.current = null;
@@ -77,40 +88,70 @@ export function SessionBar({
 
   useEffect(() => () => stop(), [stop]);
 
+  function uploadChunk(blob: Blob, sequence: number) {
+    if (blob.size < 2000) return; // silence / sub-2KB flush
+    const pendingId = crypto.randomUUID();
+    addPending({ id: pendingId, sequence, startedAt: Date.now() });
+    const fd = new FormData();
+    fd.append("sessionId", sessionId);
+    fd.append("sequence", String(sequence));
+    fd.append("audio", blob, `chunk-${sequence}.webm`);
+    fetch("/api/transcribe", { method: "POST", body: fd })
+      .catch((err) => {
+        console.error("chunk upload failed", err);
+      })
+      .finally(() => {
+        removePending(pendingId);
+      });
+  }
+
+  // Records one self-contained ~CHUNK_MS WebM blob. Each cycle uses a fresh
+  // MediaRecorder so the resulting blob includes the EBML/WebM header —
+  // otherwise Groq Whisper rejects every chunk after the first as
+  // undecodable.
+  function recordOneChunk(stream: MediaStream): Promise<Blob | null> {
+    return new Promise((resolve) => {
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm";
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      recorderRef.current = rec;
+      const parts: BlobPart[] = [];
+      rec.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) parts.push(e.data);
+      };
+      rec.onstop = () => {
+        if (recorderRef.current === rec) recorderRef.current = null;
+        resolve(
+          parts.length > 0 ? new Blob(parts, { type: "audio/webm" }) : null,
+        );
+      };
+      rec.start();
+      window.setTimeout(() => {
+        if (rec.state !== "inactive") rec.stop();
+      }, CHUNK_MS);
+    });
+  }
+
   async function start() {
     setError(null);
     setStatus("starting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: mime });
-      recorderRef.current = recorder;
       seqRef.current = 0;
-
-      recorder.ondataavailable = async (e) => {
-        if (!e.data || e.data.size === 0) return;
-        const sequence = seqRef.current++;
-        const fd = new FormData();
-        fd.append("sessionId", sessionId);
-        fd.append("sequence", String(sequence));
-        fd.append("audio", e.data, `chunk-${sequence}.webm`);
-        try {
-          await fetch("/api/transcribe", { method: "POST", body: fd });
-        } catch (err) {
-          console.error("chunk upload failed", err);
-        }
-      };
-
-      recorder.start(CHUNK_MS);
       setStartedAt(Date.now());
       setStatus("recording");
-      // Flip sessions.status to 'live' so the student dashboard surfaces the
-      // join banner. Fire-and-forget; the recorder is already running and we
-      // don't want a slow DB write to delay the audio pipeline.
-      void startSession(sessionId);
+      activeRef.current = true;
+
+      void (async () => {
+        while (activeRef.current && streamRef.current === stream) {
+          setChunkTick((t) => t + 1);
+          const blob = await recordOneChunk(stream);
+          if (!activeRef.current) break;
+          if (blob) uploadChunk(blob, seqRef.current++);
+        }
+      })();
     } catch (err) {
       setError(err instanceof Error ? err.message : "mic access failed");
       setStatus("error");
@@ -149,23 +190,30 @@ export function SessionBar({
     }
     setEnding(true);
     if (recording) stop();
-    // Persist the session-ended state, then route back. We await the
-    // server action here (unlike start) because the student-facing
-    // dashboard reads sessions.status on next render and the instructor
-    // expects the transition to be visible immediately.
-    void endSession(sessionId).finally(() => {
-      router.push(`/teach/${courseId}`);
-    });
-  }, [courseId, recording, router, sessionId, stop]);
+    // TODO: POST /api/sessions/[id]/end to flip sessions.status='ended'. For
+    // now we just route the instructor back to the course index.
+    router.push(`/teach/${courseId}`);
+  }, [courseId, recording, router, stop]);
 
   return (
-    <div className="border-divider bg-primary-contr/95 sticky bottom-0 z-20 border-t shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)] backdrop-blur">
-      <div className="flex items-center gap-5 px-6 py-3">
+    <div className="border-divider bg-primary-contr/95 relative z-20 shrink-0 border-t shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)] backdrop-blur">
+      {recording ? (
+        <div
+          key={chunkTick}
+          className="bg-primary-accent absolute top-0 left-0 h-0.5 origin-left"
+          style={{
+            animation: `sessionbar-chunk-fill ${CHUNK_MS}ms linear forwards`,
+            width: "100%",
+          }}
+        />
+      ) : null}
+      <style>{`@keyframes sessionbar-chunk-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }`}</style>
+      <div className="flex items-center gap-4 px-5 py-2.5">
         <button
           onClick={recording ? stop : start}
           disabled={status === "starting" || status === "stopping"}
           className={cn(
-            "flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-md transition disabled:opacity-50",
+            "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-white shadow-md transition disabled:opacity-50",
             recording
               ? "bg-red-600 hover:bg-red-700"
               : "bg-primary-accent hover:bg-primary-accent-dark",
@@ -184,53 +232,96 @@ export function SessionBar({
           )}
         </button>
 
-        <div className="border-divider flex items-center gap-2 border-l pl-5">
+        <div className="border-divider flex min-w-0 items-center gap-3 border-l pl-4">
           {recording ? (
             <>
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
-              <span className="text-primary font-mono text-sm tabular-nums">
-                {formatElapsed(elapsed)}
-              </span>
-              <span className="text-secondary text-xs">live</span>
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-500" />
+                <span className="text-primary font-mono text-sm tabular-nums">
+                  {formatElapsed(elapsed)}
+                </span>
+                <span className="text-secondary text-xs">live</span>
+              </div>
             </>
           ) : (
-            <span className="text-secondary text-xs">
-              {error ?? "Tap Record to start the lecture"}
+            <span className="text-secondary truncate text-xs">
+              {error ?? "Tap Record to start"}
             </span>
           )}
         </div>
 
-        <div className="border-divider hidden items-center gap-4 border-l pl-5 md:flex">
-          <Metric label="Transcript" value={`${transcript.length}`} />
-          <Metric label="Questions" value={`${questions.length}`} />
+        <div className="border-divider hidden shrink-0 items-center gap-4 border-l pl-4 lg:flex">
+          <Metric label="Lines" value={`${transcript.length}`} />
+          <Metric label="Qs" value={`${questions.length}`} />
           <ConfusionMeter total={confusionTotal} />
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <button
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <IconButton
             onClick={copy}
-            className="text-secondary hover:text-primary border-divider flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition hover:bg-stone-50"
-            aria-label="Copy student join link"
-          >
-            {copied ? (
-              <MdCheck className="text-primary-accent h-3.5 w-3.5" />
-            ) : (
-              <MdContentCopy className="h-3.5 w-3.5" />
-            )}
-            {copied ? "Copied" : "Copy student link"}
-          </button>
+            icon={
+              copied ? (
+                <MdCheck className="text-primary-accent h-4 w-4" />
+              ) : (
+                <MdContentCopy className="h-4 w-4" />
+              )
+            }
+            label={copied ? "Copied" : "Copy link"}
+            title="Copy the student join link to clipboard"
+          />
+          <IconButton
+            onClick={() => setAdvancedOpen(true)}
+            icon={<MdTune className="h-4 w-4" />}
+            label="Advanced"
+            title="Load sample, reset, and try RAG against this session"
+          />
           <button
             onClick={finish}
             disabled={ending}
-            className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
             aria-label="End lecture"
+            title="End the lecture and return to course view"
           >
-            <MdFlagCircle className="h-3.5 w-3.5" />
-            {ending ? "Ending…" : "End lecture"}
+            <MdFlagCircle className="h-4 w-4" />
+            <span className="hidden md:inline">
+              {ending ? "Ending…" : "End"}
+            </span>
           </button>
         </div>
       </div>
+      <AdvancedDrawer
+        sessionId={sessionId}
+        open={advancedOpen}
+        onClose={() => setAdvancedOpen(false)}
+      />
     </div>
+  );
+}
+
+function IconButton({
+  onClick,
+  disabled,
+  icon,
+  label,
+  title,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  title: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={label}
+      className="text-secondary hover:text-primary border-divider flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-xs font-medium transition hover:bg-stone-50 disabled:opacity-50"
+    >
+      {icon}
+      <span className="hidden md:inline">{label}</span>
+    </button>
   );
 }
 

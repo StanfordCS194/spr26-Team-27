@@ -1,35 +1,27 @@
 "use client";
 
-import { streamQa } from "@/lib/qa";
+import { streamQa, type CitationManifest } from "@/lib/qa";
 import type { Message } from "@/types/messages";
 import { useCallback, useRef, useState } from "react";
 
-// Typewriter knobs: incoming model deltas are buffered, then revealed at a
-// steady cadence so wildly variable token sizes don't cause visible stutter.
-// Per tick we drain ~1/TARGET_TICKS of the buffer.
 const TYPEWRITER_TICK_MS = 25;
 const TYPEWRITER_TARGET_TICKS = 20;
-
-export interface SendOptions {
-  fromSeconds?: number;
-  uptoSeconds?: number;
-}
 
 export interface UseChatResult {
   messages: Message[];
   streaming: boolean;
   error: string | null;
-  send: (question: string, opts?: SendOptions) => void;
+  send: (question: string) => void;
 }
 
-export function useChat(lectureId: string): UseChatResult {
+export function useChat(lectureId: string, sessionId: string): UseChatResult {
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
-    (question: string, opts?: SendOptions): void => {
+    (question: string): void => {
       const trimmed = question.trim();
       if (!trimmed || streaming) return;
 
@@ -44,16 +36,21 @@ export function useChat(lectureId: string): UseChatResult {
       setMessages((prev) => [
         ...prev,
         { id: studentId, content: trimmed, role: "student", lectureId },
-        { id: assistantId, content: "", role: "inLecture", lectureId },
+        {
+          id: assistantId,
+          content: "",
+          role: "inLecture",
+          lectureId,
+          toolCalls: [],
+        },
       ]);
 
-      void run(ac.signal, assistantId, trimmed, opts);
+      void run(ac.signal, assistantId, trimmed);
 
       async function run(
         signal: AbortSignal,
         targetId: string,
         q: string,
-        windowOpts?: SendOptions,
       ): Promise<void> {
         const buf = { text: "" };
         let streamDone = false;
@@ -86,14 +83,41 @@ export function useChat(lectureId: string): UseChatResult {
           }, TYPEWRITER_TICK_MS);
         });
 
+        let citations: CitationManifest | undefined;
         try {
-          for await (const delta of streamQa({
+          for await (const evt of streamQa({
             question: q,
-            uptoSeconds: windowOpts?.uptoSeconds ?? Number.MAX_SAFE_INTEGER,
-            fromSeconds: windowOpts?.fromSeconds,
+            sessionId,
             signal,
           })) {
-            buf.text += delta;
+            if (evt.type === "delta") {
+              buf.text += evt.delta;
+            } else if (evt.type === "tool_call") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === targetId
+                    ? {
+                        ...m,
+                        toolCalls: [...(m.toolCalls ?? []), evt.tool],
+                      }
+                    : m,
+                ),
+              );
+            } else if (evt.type === "tool_result") {
+              setMessages((prev) =>
+                prev.map((m) => {
+                  if (m.id !== targetId) return m;
+                  const next = (m.toolCalls ?? []).map((t) =>
+                    t.id === evt.tool.id
+                      ? { ...t, resultCount: evt.tool.resultCount }
+                      : t,
+                  );
+                  return { ...m, toolCalls: next };
+                }),
+              );
+            } else if (evt.type === "citations") {
+              citations = evt.citations;
+            }
           }
         } catch (err) {
           if (!signal.aborted) {
@@ -104,10 +128,17 @@ export function useChat(lectureId: string): UseChatResult {
         }
 
         await drain;
+        if (citations && !signal.aborted) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === targetId ? { ...m, citations } : m,
+            ),
+          );
+        }
         if (!signal.aborted) setStreaming(false);
       }
     },
-    [lectureId, streaming],
+    [lectureId, sessionId, streaming],
   );
 
   return { messages, streaming, error, send };
