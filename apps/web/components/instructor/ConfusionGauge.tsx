@@ -1,6 +1,10 @@
 "use client";
 
+import { useLatestConfusionAnchor } from "@/lib/realtime/useLatestConfusionAnchor";
 import { useLiveConfusion } from "@/lib/realtime/useLiveConfusion";
+import { useLiveTranscript } from "@/lib/realtime/useLiveTranscript";
+import { useMemo } from "react";
+import { MdMyLocation } from "react-icons/md";
 
 const LABELS: Record<keyof ReturnType<typeof useLiveConfusion>, string> = {
   im_lost: "I'm lost",
@@ -11,10 +15,35 @@ const LABELS: Record<keyof ReturnType<typeof useLiveConfusion>, string> = {
 
 export function ConfusionGauge({ sessionId }: { sessionId: string }) {
   const totals = useLiveConfusion(sessionId, 60);
-  const total = Object.values(totals).reduce((a, b) => a + b, 0);
+  const total =
+    totals.im_lost +
+    totals.re_explain +
+    totals.what_just_happened +
+    totals.give_example;
+  const anchor = useLatestConfusionAnchor(sessionId);
+  const transcript = useLiveTranscript(sessionId);
+
+  // Resolve the anchor id to the matching transcript line so we can show a
+  // human-readable timestamp on the jump button.
+  const anchorLine = useMemo(() => {
+    if (!anchor) return null;
+    return transcript.find((t) => t.id === anchor.transcriptItemId) ?? null;
+  }, [anchor, transcript]);
+
+  const jumpToAnchor = () => {
+    if (!anchorLine) return;
+    const el = document.getElementById(
+      `transcript-${anchorLine.timestampSeconds}`,
+    );
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.classList.add("bg-primary-tint/50");
+    window.setTimeout(() => {
+      el?.classList.remove("bg-primary-tint/50");
+    }, 1500);
+  };
 
   return (
-    <div className="border-divider flex flex-col gap-3 border-b px-6 py-4">
+    <div className="border-divider flex flex-col gap-3 px-6 py-4">
       <div className="flex items-center justify-between">
         <h3 className="text-primary text-lg font-semibold">
           Confusion (last 60s)
@@ -47,6 +76,17 @@ export function ConfusionGauge({ sessionId }: { sessionId: string }) {
             </li>
           ))}
         </ul>
+      )}
+      {anchorLine && (
+        <button
+          type="button"
+          onClick={jumpToAnchor}
+          title="Scroll the transcript to the line students were on when they last tapped a quick-prompt button"
+          className="border-primary-accent/40 bg-primary-tint/40 text-primary-accent-dark hover:bg-primary-tint flex items-center gap-1.5 self-start rounded-full border px-2.5 py-1 text-[11px] font-semibold transition"
+        >
+          <MdMyLocation className="h-3.5 w-3.5" />
+          Jump to {anchorLine.timestamp}
+        </button>
       )}
     </div>
   );

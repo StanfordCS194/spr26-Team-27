@@ -1,7 +1,7 @@
 "use server";
 
-import { sessions } from "@spr26/db";
-import { eq } from "drizzle-orm";
+import { questions, sessions } from "@spr26/db";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 
@@ -30,4 +30,18 @@ export async function endSession(sessionId: string): Promise<void> {
     .update(sessions)
     .set({ status: "ended", endedAt: new Date() })
     .where(eq(sessions.id, sessionId));
+}
+
+// Stamp `answered_at = now()` on a question so the instructor's feed can hide
+// it (or visually demote it) once they've spoken to the question in lecture.
+// Guarded against double-marking via the `IS NULL` clause so a re-click is a
+// no-op rather than overwriting the original timestamp.
+//
+// TODO(auth): same caveat as startSession — gate on the instructor owning the
+// session's course once instructor auth lands.
+export async function markQuestionAnswered(questionId: string): Promise<void> {
+  await db()
+    .update(questions)
+    .set({ answeredAt: new Date() })
+    .where(and(eq(questions.id, questionId), isNull(questions.answeredAt)));
 }

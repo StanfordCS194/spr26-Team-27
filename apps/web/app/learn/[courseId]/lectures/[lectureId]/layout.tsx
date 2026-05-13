@@ -8,6 +8,7 @@ import { getSessionForStudent } from "@/lib/queries/dashboard";
 import {
   ensureParticipant,
   getBookmarkedTranscriptIds,
+  getDeferredQuestions,
 } from "@/lib/queries/session";
 
 export default async function StudentLectureLayout({
@@ -37,7 +38,10 @@ export default async function StudentLectureLayout({
   // participant_id, so we materialize it here once per render rather than
   // scattering find-or-create logic across the action layer.
   const participantId = await ensureParticipant(ctx.session.id);
-  const initialBookmarks = await getBookmarkedTranscriptIds(participantId);
+  const [initialBookmarks, initialDeferredQuestions] = await Promise.all([
+    getBookmarkedTranscriptIds(participantId),
+    getDeferredQuestions(participantId),
+  ]);
 
   return (
     <StudentSessionProvider
@@ -45,6 +49,7 @@ export default async function StudentLectureLayout({
       sessionStatus={ctx.session.status}
       participantId={participantId}
       initialBookmarkedIds={initialBookmarks}
+      initialDeferredQuestions={initialDeferredQuestions}
     >
       <div className="flex min-h-0 flex-1 flex-col">
         <Topbar
