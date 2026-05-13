@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/Badge";
+import { endSession, startSession } from "@/lib/actions/instructor";
 import { useLiveConfusion } from "@/lib/realtime/useLiveConfusion";
 import { useLiveQuestions } from "@/lib/realtime/useLiveQuestions";
 import { useLiveTranscript } from "@/lib/realtime/useLiveTranscript";
@@ -106,6 +107,10 @@ export function SessionBar({
       recorder.start(CHUNK_MS);
       setStartedAt(Date.now());
       setStatus("recording");
+      // Flip sessions.status to 'live' so the student dashboard surfaces the
+      // join banner. Fire-and-forget; the recorder is already running and we
+      // don't want a slow DB write to delay the audio pipeline.
+      void startSession(sessionId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "mic access failed");
       setStatus("error");
@@ -144,10 +149,14 @@ export function SessionBar({
     }
     setEnding(true);
     if (recording) stop();
-    // TODO: POST /api/sessions/[id]/end to flip sessions.status='ended'. For
-    // now we just route the instructor back to the course index.
-    router.push(`/teach/${courseId}`);
-  }, [courseId, recording, router, stop]);
+    // Persist the session-ended state, then route back. We await the
+    // server action here (unlike start) because the student-facing
+    // dashboard reads sessions.status on next render and the instructor
+    // expects the transition to be visible immediately.
+    void endSession(sessionId).finally(() => {
+      router.push(`/teach/${courseId}`);
+    });
+  }, [courseId, recording, router, sessionId, stop]);
 
   return (
     <div className="border-divider bg-primary-contr/95 sticky bottom-0 z-20 border-t shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)] backdrop-blur">

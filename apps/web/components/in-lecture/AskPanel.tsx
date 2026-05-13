@@ -2,9 +2,10 @@
 
 import { EmptyState } from "@/components/in-lecture/EmptyState";
 import { useStudentSession } from "@/components/in-lecture/StudentSessionContext";
+import { persistQuestion, recordQuickPrompt } from "@/lib/actions/engagement";
 import { useChat } from "@/lib/useChat";
 import type { Message } from "@/types/messages";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useEffect,
   useRef,
@@ -47,14 +48,25 @@ function parseTimestampToSeconds(ts: string): number {
   return 0;
 }
 
+// Map a quick-prompt button label to the schema enum used in
+// quick_prompt_signals — the chips' free-text labels need to land in the
+// instructor-facing confusion gauge as structured signals.
+const QUICK_PROMPT_TYPE: Record<
+  string,
+  "re_explain" | "give_example" | "what_just_happened"
+> = {
+  "Re-explain that": "re_explain",
+  "Give an example": "give_example",
+  "What just happened?": "what_just_happened",
+};
+
 export default function AskPanel() {
-  const { lectureId } = useParams<{ lectureId: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const q = searchParams.get("q") ?? "";
 
-  const { messages, streaming, error, send } = useChat(lectureId ?? "demo");
-  const { lines } = useStudentSession();
+  const { sessionId, sessionStatus, lines } = useStudentSession();
+  const { messages, streaming, error, send } = useChat(sessionId);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -94,6 +106,17 @@ export default function AskPanel() {
 
   const submit = () => {
     if (!canSend) return;
+    const anchorId = lines[lines.length - 1]?.id ?? null;
+    // Persistence is fire-and-forget — the UI shows the question
+    // immediately via useChat, and the row that surfaces in the
+    // post-session summary doesn't need to block the stream starting.
+    void persistQuestion(
+      sessionId,
+      trimmed,
+      deferMode ? "deferred" : "immediate",
+      anchorId,
+    );
+
     if (deferMode) {
       setDeferred((prev) => [
         ...prev,
@@ -109,6 +132,19 @@ export default function AskPanel() {
   const sendQuickPrompt = (prompt: string) => {
     if (streaming) return;
     const last = lines[lines.length - 1];
+    const anchorId = last?.id ?? null;
+    const promptType = QUICK_PROMPT_TYPE[prompt];
+    // Two writes per tap, both fire-and-forget:
+    //   - quick_prompt_signals row → feeds the instructor's confusion gauge
+    //   - questions row (via persistQuestion) → keeps the prompt + answer
+    //     pair in the post-session summary
+    // Only fire the signal during live sessions; tapping a chip while
+    // browsing an ended transcript shouldn't ping the confusion gauge.
+    if (promptType && sessionStatus === "live") {
+      void recordQuickPrompt(sessionId, promptType, anchorId);
+    }
+    void persistQuestion(sessionId, prompt, "immediate", anchorId);
+
     if (!last) {
       send(prompt);
       return;
