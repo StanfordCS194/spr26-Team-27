@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  customType,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -10,6 +12,21 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+
+// Minimal pgvector column type. Stored as `vector(<dim>)`; round-tripped as a
+// JS number[]. Pinned to 1536 to match OpenAI text-embedding-3-small.
+const EMBEDDING_DIM = 1536;
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return `vector(${EMBEDDING_DIM})`;
+  },
+  toDriver(value) {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value) {
+    return JSON.parse(value) as number[];
+  },
+});
 
 // Enums --------------------------------------------------------------------
 
@@ -167,6 +184,10 @@ export const transcriptItems = pgTable(
     sequence: integer("sequence").notNull(),
     timestampSeconds: integer("timestamp_seconds").notNull(),
     content: text("content").notNull(),
+    // Optional reference to the audio chunk this line was transcribed from
+    // (Supabase Storage path). NULL when transcript was imported, not recorded.
+    audioStoragePath: text("audio_storage_path"),
+    embedding: vector("embedding"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -176,6 +197,9 @@ export const transcriptItems = pgTable(
       t.sessionId,
       t.sequence,
     ),
+    index("transcript_items_embedding_idx")
+      .using("hnsw", sql`${t.embedding} vector_cosine_ops`)
+      .where(sql`${t.embedding} IS NOT NULL`),
   ],
 ).enableRLS();
 
@@ -202,12 +226,16 @@ export const courseMaterialChunks = pgTable(
     chunkIndex: integer("chunk_index").notNull(),
     content: text("content").notNull(),
     pageNumber: integer("page_number"),
+    embedding: vector("embedding"),
   },
   (t) => [
     unique("course_material_chunks_material_index_unique").on(
       t.courseMaterialId,
       t.chunkIndex,
     ),
+    index("course_material_chunks_embedding_idx")
+      .using("hnsw", sql`${t.embedding} vector_cosine_ops`)
+      .where(sql`${t.embedding} IS NOT NULL`),
   ],
 ).enableRLS();
 
