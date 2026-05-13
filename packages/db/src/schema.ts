@@ -203,6 +203,40 @@ export const transcriptItems = pgTable(
   ],
 ).enableRLS();
 
+// Sliding-window chunks of transcript_items used for RAG retrieval. Each
+// chunk concatenates ~20 consecutive utterances (~3 min of speech) with a
+// 5-item overlap to its neighbors, so retrieval has enough semantic context
+// per match.
+export const transcriptChunks = pgTable(
+  "transcript_chunks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    startSeq: integer("start_seq").notNull(),
+    endSeq: integer("end_seq").notNull(),
+    startTimestampSeconds: integer("start_timestamp_seconds").notNull(),
+    endTimestampSeconds: integer("end_timestamp_seconds").notNull(),
+    content: text("content").notNull(),
+    embedding: vector("embedding"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    check("transcript_chunks_seq_order", sql`${t.endSeq} >= ${t.startSeq}`),
+    unique("transcript_chunks_session_start_unique").on(
+      t.sessionId,
+      t.startSeq,
+    ),
+    index("transcript_chunks_session_end_idx").on(t.sessionId, t.endSeq),
+    index("transcript_chunks_embedding_idx")
+      .using("hnsw", sql`${t.embedding} vector_cosine_ops`)
+      .where(sql`${t.embedding} IS NOT NULL`),
+  ],
+).enableRLS();
+
 export const courseMaterials = pgTable("course_materials", {
   id: uuid("id").primaryKey().defaultRandom(),
   courseId: uuid("course_id")
@@ -426,3 +460,5 @@ export type CourseMaterial = typeof courseMaterials.$inferSelect;
 export type NewCourseMaterial = typeof courseMaterials.$inferInsert;
 export type CourseMaterialChunk = typeof courseMaterialChunks.$inferSelect;
 export type NewCourseMaterialChunk = typeof courseMaterialChunks.$inferInsert;
+export type TranscriptChunk = typeof transcriptChunks.$inferSelect;
+export type NewTranscriptChunk = typeof transcriptChunks.$inferInsert;

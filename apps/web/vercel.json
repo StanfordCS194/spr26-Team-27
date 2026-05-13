@@ -7,6 +7,9 @@
   "functions": {
     "app/api/transcribe/route.ts": { "maxDuration": 60 },
     "app/api/embed/route.ts": { "maxDuration": 60 },
-    "app/api/qa/route.ts": { "maxDuration": 60 }
-  }
+    "app/api/chunk/route.ts": { "maxDuration": 60 },
+    "app/api/qa/route.ts": { "maxDuration": 60 },
+    "app/api/sessions/load-sample/route.ts": { "maxDuration": 60 }
+  },
+  "crons": []
 }
