@@ -2,6 +2,7 @@
 
 import { AdvancedDrawer } from "@/components/instructor/AdvancedDrawer";
 import { useRecordingPending } from "@/components/instructor/RecordingPendingContext";
+import { endSession, startSession } from "@/lib/actions/instructor";
 import { Badge } from "@/components/ui/Badge";
 import { useLiveConfusion } from "@/lib/realtime/useLiveConfusion";
 import { useLiveQuestions } from "@/lib/realtime/useLiveQuestions";
@@ -71,7 +72,6 @@ export function SessionBar({
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [status]);
-
 
   const activeRef = useRef(false);
 
@@ -143,6 +143,10 @@ export function SessionBar({
       setStartedAt(Date.now());
       setStatus("recording");
       activeRef.current = true;
+      // Flip sessions.status='live' so the student dashboard surfaces the
+      // join banner. Fire-and-forget — recorder is already running and we
+      // don't want a slow DB write delaying the audio pipeline.
+      void startSession(sessionId);
 
       void (async () => {
         while (activeRef.current && streamRef.current === stream) {
@@ -190,10 +194,12 @@ export function SessionBar({
     }
     setEnding(true);
     if (recording) stop();
-    // TODO: POST /api/sessions/[id]/end to flip sessions.status='ended'. For
-    // now we just route the instructor back to the course index.
-    router.push(`/teach/${courseId}`);
-  }, [courseId, recording, router, stop]);
+    // Persist the session-ended state, then route back. Awaited so the
+    // student dashboard's next render sees the transition.
+    void endSession(sessionId).finally(() => {
+      router.push(`/teach/${courseId}`);
+    });
+  }, [courseId, recording, router, sessionId, stop]);
 
   return (
     <div className="border-divider bg-primary-contr/95 relative z-20 shrink-0 border-t shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)] backdrop-blur">
@@ -213,7 +219,7 @@ export function SessionBar({
           onClick={recording ? stop : start}
           disabled={status === "starting" || status === "stopping"}
           className={cn(
-            "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-white shadow-md transition disabled:opacity-50",
+            "flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap text-white shadow-md transition disabled:opacity-50",
             recording
               ? "bg-red-600 hover:bg-red-700"
               : "bg-primary-accent hover:bg-primary-accent-dark",
@@ -278,7 +284,7 @@ export function SessionBar({
           <button
             onClick={finish}
             disabled={ending}
-            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-red-700 transition hover:bg-red-100 disabled:opacity-50"
             aria-label="End lecture"
             title="End the lecture and return to course view"
           >
@@ -317,7 +323,7 @@ function IconButton({
       disabled={disabled}
       title={title}
       aria-label={label}
-      className="text-secondary hover:text-primary border-divider flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-xs font-medium transition hover:bg-stone-50 disabled:opacity-50"
+      className="text-secondary hover:text-primary border-divider flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition hover:bg-stone-50 disabled:opacity-50"
     >
       {icon}
       <span className="hidden md:inline">{label}</span>

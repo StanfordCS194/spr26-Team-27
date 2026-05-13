@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { StudentSessionProvider } from "@/components/in-lecture/StudentSessionContext";
 import Topbar from "@/components/in-lecture/Topbar";
+import { lectureById } from "@/data/lectures";
 import { requireStudent } from "@/lib/auth";
 import { getSessionForStudent } from "@/lib/queries/dashboard";
 import {
@@ -17,14 +18,24 @@ export default async function StudentLectureLayout({
   params: Promise<{ courseId: string; lectureId: string }>;
 }) {
   const { courseId, lectureId } = await params;
+
+  // Amrit's URL contract: [lectureId] is the friendly id ("1" / "2" / "3")
+  // and apps/web/data/lectures.ts owns the mapping to a real session UUID.
+  // Resolve here so the rest of the layout works in terms of session.id.
+  const lecture = lectureById(lectureId);
+  if (!lecture) notFound();
+
   const student = await requireStudent();
-  const ctx = await getSessionForStudent(student.id, courseId, lectureId);
+  const ctx = await getSessionForStudent(
+    student.id,
+    courseId,
+    lecture.sessionId,
+  );
   if (!ctx) notFound();
 
-  // Idempotent: returns the existing id if the student has already joined,
-  // creates one otherwise. Every engagement action downstream depends on
-  // having a participant_id, so we materialize it here once per render
-  // rather than scattering find-or-create logic across the action layer.
+  // Idempotent: every engagement action downstream depends on having a
+  // participant_id, so we materialize it here once per render rather than
+  // scattering find-or-create logic across the action layer.
   const participantId = await ensureParticipant(ctx.session.id);
   const initialBookmarks = await getBookmarkedTranscriptIds(participantId);
 

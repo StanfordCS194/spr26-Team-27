@@ -60,9 +60,33 @@ async function main(): Promise<void> {
   // that breaks realtime delivery for that account, even though Drizzle
   // queries on the server would still find the row by email.
   const seededStudentEmail = process.env.SEED_STUDENT_EMAIL;
-  let firstSessionId = "";
   let courseSlug = "";
   let sessionIds: string[] = [];
+
+  // Hardcoded session UUIDs so apps/web/data/lectures.ts (which maps friendly
+  // ids "1"/"2"/"3" → these uuids) keeps working without a runtime lookup.
+  // If you change these, also update lectures.ts.
+  const LECTURE_ROWS: readonly {
+    id: string;
+    title: string;
+    status: "ended" | "scheduled";
+  }[] = [
+    {
+      id: "742bcd6f-0896-4a89-8e8c-91abbb11fd95",
+      title: "1 - Counting",
+      status: "ended",
+    },
+    {
+      id: "59d5f5c1-671c-4b6f-917b-f3d1f5d24282",
+      title: "2 - Combinatorics",
+      status: "scheduled",
+    },
+    {
+      id: "00b10e74-4620-47d8-a298-5cddc8f4e087",
+      title: "3 - What is Probability?",
+      status: "scheduled",
+    },
+  ];
 
   await db.transaction(async (tx) => {
     // Wipe in dependency order. Truncate-cascade would be shorter but
@@ -87,7 +111,10 @@ async function main(): Promise<void> {
     const [course] = await tx
       .insert(courses)
       .values({
-        slug: "piech109",
+        // Slug matches the courseId hardcoded in apps/web/data/lectures.ts
+        // so that lectures.ts's (lectureId → sessionId) mapping resolves
+        // through to a real course in the DB.
+        slug: "cs-109",
         title: "CS 109: Introduction to Probability",
         instructorId: instructor.id,
       })
@@ -95,28 +122,20 @@ async function main(): Promise<void> {
     if (!course) throw new Error("failed to seed course");
     courseSlug = course.slug;
 
-    const lectureTitles = [
-      "1 - Counting",
-      "2 - Combinatorics",
-      "3 - What is Probability?",
-    ];
     const lectureRows = await tx
       .insert(sessions)
       .values(
-        lectureTitles.map((title, idx) => ({
+        LECTURE_ROWS.map((l) => ({
+          id: l.id,
           courseId: course.id,
-          title,
-          // First lecture is "ended" so students see something concrete in
-          // the past-sessions list immediately. Lecture 2 is scheduled (the
-          // one an instructor would flip to 'live' to demo the banner).
-          status: idx === 0 ? ("ended" as const) : ("scheduled" as const),
+          title: l.title,
+          status: l.status,
         })),
       )
       .returning();
 
     const firstLecture = lectureRows[0];
     if (!firstLecture) throw new Error("failed to seed lectures");
-    firstSessionId = firstLecture.id;
     sessionIds = lectureRows.map((l) => l.id);
 
     if (visible.length > 0) {

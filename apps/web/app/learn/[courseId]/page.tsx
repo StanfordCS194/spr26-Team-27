@@ -9,8 +9,17 @@ import {
 
 import { EmptyState } from "@/components/in-lecture/EmptyState";
 import { Badge } from "@/components/ui/Badge";
+import { lectures } from "@/data/lectures";
 import { requireStudent } from "@/lib/auth";
 import { getCourseForStudent } from "@/lib/queries/dashboard";
+
+// Mirror of CourseCard's helper: convert a sessions.id back to the friendly
+// id used in student-facing URLs (Amrit's lectures.ts mapping). Returns the
+// raw UUID when no mapping exists — the lecture layout's lectureById guard
+// will then notFound() for unmapped sessions.
+function sessionToLectureId(sessionId: string): string {
+  return lectures.find((l) => l.sessionId === sessionId)?.id ?? sessionId;
+}
 
 export default async function LearnCoursePage({
   params,
@@ -38,7 +47,7 @@ export default async function LearnCoursePage({
 
         {liveSession && (
           <Link
-            href={`/learn/${course.slug}/lectures/${liveSession.id}/ask`}
+            href={`/learn/${course.slug}/lectures/${sessionToLectureId(liveSession.id)}/ask`}
             className="bg-primary-accent hover:bg-primary-accent-dark flex items-center justify-between gap-3 rounded-2xl px-5 py-4 text-white shadow-sm transition"
           >
             <div className="flex flex-col gap-1">
@@ -92,7 +101,7 @@ export default async function LearnCoursePage({
               {pastSessions.map((session) => (
                 <li key={session.id}>
                   <Link
-                    href={`/learn/${course.slug}/lectures/${session.id}/transcript`}
+                    href={`/learn/${course.slug}/lectures/${sessionToLectureId(session.id)}/transcript`}
                     className="bg-primary-contr border-divider hover:border-primary-accent flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition"
                   >
                     <div className="flex flex-col gap-0.5">

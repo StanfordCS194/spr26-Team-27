@@ -7,11 +7,20 @@ import {
 } from "react-icons/md";
 
 import { Badge } from "@/components/ui/Badge";
+import { lectures } from "@/data/lectures";
 
 interface Props {
   course: Course;
   liveSession: Session | null;
   recentSessions: Session[];
+}
+
+// Reverse-map a real sessions.id back to the friendly lecture id used in
+// student URLs (Amrit's data/lectures.ts). When a session isn't in the
+// hand-mapped list we degrade to the raw UUID — the layout's lectureById
+// guard will then notFound() rather than rendering a broken state.
+function sessionToLectureId(sessionId: string): string {
+  return lectures.find((l) => l.sessionId === sessionId)?.id ?? sessionId;
 }
 
 export function CourseCard({ course, liveSession, recentSessions }: Props) {
@@ -41,7 +50,7 @@ export function CourseCard({ course, liveSession, recentSessions }: Props) {
 
       {liveSession ? (
         <Link
-          href={`/learn/${course.slug}/lectures/${liveSession.id}/ask`}
+          href={`/learn/${course.slug}/lectures/${sessionToLectureId(liveSession.id)}/ask`}
           className="bg-primary-accent hover:bg-primary-accent-dark flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition"
         >
           <span className="flex items-center gap-2">
@@ -70,7 +79,7 @@ export function CourseCard({ course, liveSession, recentSessions }: Props) {
             {recentSessions.map((session) => (
               <li key={session.id}>
                 <Link
-                  href={`/learn/${course.slug}/lectures/${session.id}/transcript`}
+                  href={`/learn/${course.slug}/lectures/${sessionToLectureId(session.id)}/transcript`}
                   className="text-primary hover:bg-primary-tint/40 -mx-2 flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition"
                 >
                   <span className="truncate">{session.title}</span>
