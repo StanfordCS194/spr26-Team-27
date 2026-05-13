@@ -30,7 +30,13 @@ export async function signIn(formData: FormData): Promise<void> {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) backTo("/login", error.message);
 
-  redirect("/learn");
+  const [user] = await db()
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  redirect(user?.role === "instructor" ? "/teach" : "/learn");
 }
 
 export async function signUp(formData: FormData): Promise<void> {
