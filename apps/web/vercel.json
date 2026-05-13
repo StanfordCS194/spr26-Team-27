@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && npm run build -w @spr26/web",
+  "installCommand": "cd ../.. && npm install",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "functions": {
+    "app/api/transcribe/route.ts": { "maxDuration": 60 },
+    "app/api/embed/route.ts": { "maxDuration": 60 },
+    "app/api/qa/route.ts": { "maxDuration": 60 }
+  }
+}
