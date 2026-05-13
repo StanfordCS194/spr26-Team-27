@@ -27,7 +27,7 @@ export default function LandingPage() {
             — so you can ask questions, get clarity, and stay engaged in a 300+
             person auditorium.
           </p>
-          <PrimaryLink href="/learn/cs-109">Try it now</PrimaryLink>
+          <PrimaryLink href="/learn">Try it now</PrimaryLink>
         </div>
       </SectionContainer>
 
@@ -158,7 +158,7 @@ export default function LandingPage() {
           InLecture is currently in development. Sign up to get early access and
           help us shape the future of AI in the classroom.
         </SectionDescription>
-        <PrimaryLink href="/learn/cs-109">Try it out!</PrimaryLink>
+        <PrimaryLink href="/learn">Try it out!</PrimaryLink>
       </SectionContainer>
 
       <div className="bg-footer-bg flex w-full items-start justify-between px-6 py-4 sm:items-center">

@@ -1,6 +1,6 @@
 "use client";
 
-import Sidebar from "@/components/in-lecture/Sidebar";
+import Sidebar, { type SidebarSession } from "@/components/in-lecture/Sidebar";
 import {
   SidebarProvider,
   useSidebar,
@@ -9,30 +9,31 @@ import { usePathname } from "next/navigation";
 
 type Mode = "student" | "instructor";
 
-function ShellInner({
-  mode,
-  children,
-}: {
+interface Props {
   mode: Mode;
+  courseSlug: string;
+  sessions: readonly SidebarSession[];
   children: React.ReactNode;
-}) {
+}
+
+function ShellInner({ mode, courseSlug, sessions, children }: Props) {
   const { sidebarOpen } = useSidebar();
   const pathname = usePathname();
   const root = mode === "student" ? "learn" : "teach";
   // Course index = /(learn|teach)/[courseId] with no /lectures/... suffix.
-  const isAtCourseIndex = !!pathname?.match(new RegExp(`^/${root}/[^/]+/?$`));
+  const isAtCourseIndex = new RegExp(`^/${root}/[^/]+/?$`).test(pathname ?? "");
 
   return (
     <div className="flex h-full">
       {isAtCourseIndex && (
         <div className="flex flex-1 flex-col sm:hidden">
-          <Sidebar mode={mode} />
+          <Sidebar mode={mode} courseSlug={courseSlug} sessions={sessions} />
         </div>
       )}
 
       {sidebarOpen && (
         <div className="w-sidebar border-divider hidden shrink-0 border-r sm:flex sm:flex-col">
-          <Sidebar mode={mode} />
+          <Sidebar mode={mode} courseSlug={courseSlug} sessions={sessions} />
         </div>
       )}
       <div
@@ -48,16 +49,10 @@ function ShellInner({
   );
 }
 
-export default function CourseShell({
-  mode,
-  children,
-}: {
-  mode: Mode;
-  children: React.ReactNode;
-}) {
+export default function CourseShell(props: Props) {
   return (
     <SidebarProvider>
-      <ShellInner mode={mode}>{children}</ShellInner>
+      <ShellInner {...props} />
     </SidebarProvider>
   );
 }
