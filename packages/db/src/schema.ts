@@ -292,6 +292,7 @@ export const questions = pgTable("questions", {
     { onDelete: "set null" },
   ),
   askedAt: timestamp("asked_at", { withTimezone: true }).notNull().defaultNow(),
+  answeredAt: timestamp("answered_at", { withTimezone: true }),
 }).enableRLS();
 
 export const answers = pgTable(

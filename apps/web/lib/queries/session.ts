@@ -1,7 +1,7 @@
 import "server-only";
 
-import { bookmarks, sessionParticipants, users } from "@spr26/db";
-import { and, eq } from "drizzle-orm";
+import { bookmarks, questions, sessionParticipants, users } from "@spr26/db";
+import { and, asc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
@@ -94,4 +94,28 @@ export async function getBookmarkedTranscriptIds(
     .from(bookmarks)
     .where(eq(bookmarks.participantId, participantId));
   return rows.map((r) => r.transcriptItemId);
+}
+
+export interface DeferredQuestionRow {
+  id: string;
+  content: string;
+}
+
+// Deferred questions this participant has queued so far. The AskPanel hydrates
+// its local queue from this on mount, so a page refresh doesn't lose anything
+// the student typed.
+export async function getDeferredQuestions(
+  participantId: string,
+): Promise<DeferredQuestionRow[]> {
+  const rows = await db()
+    .select({ id: questions.id, content: questions.content })
+    .from(questions)
+    .where(
+      and(
+        eq(questions.participantId, participantId),
+        eq(questions.mode, "deferred"),
+      ),
+    )
+    .orderBy(asc(questions.askedAt));
+  return rows;
 }

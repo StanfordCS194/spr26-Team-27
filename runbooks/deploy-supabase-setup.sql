@@ -260,6 +260,33 @@ CREATE POLICY "transcript_chunks_enrolled_select" ON public.transcript_chunks
   );
 
 -- ===========================================================================
+-- MIGRATION 0006 — questions.answered_at + instructor UPDATE policy
+-- ===========================================================================
+
+ALTER TABLE public.questions
+  ADD COLUMN IF NOT EXISTS answered_at timestamp with time zone;
+
+DROP POLICY IF EXISTS "questions_instructor_update" ON public.questions;
+CREATE POLICY "questions_instructor_update" ON public.questions
+  FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.sessions s
+      JOIN public.courses c ON c.id = s.course_id
+      WHERE s.id = questions.session_id
+        AND c.instructor_id = (SELECT auth.uid())
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.sessions s
+      JOIN public.courses c ON c.id = s.course_id
+      WHERE s.id = questions.session_id
+        AND c.instructor_id = (SELECT auth.uid())
+    )
+  );
+
+-- ===========================================================================
 -- STRUCTURAL SEED (self-healing)
 -- ===========================================================================
 
