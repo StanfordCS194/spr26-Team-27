@@ -102,6 +102,8 @@ function errorMessage(code: string | undefined): string | null {
       return "We couldn't find a student account matching your email. Sign up first, or ask your instructor to enroll you.";
     case "not_student":
       return "This account is for instructors. Sign in to the instructor app instead.";
+    case "not_instructor":
+      return "This account is for students. Sign in to the student app instead.";
     default:
       // Pass-through Supabase Auth errors (e.g. "Invalid login credentials").
       return code;

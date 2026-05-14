@@ -3,6 +3,7 @@
 import { questions, sessions } from "@spr26/db";
 import { and, eq, isNull } from "drizzle-orm";
 
+import { requireInstructor } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 // Flip a session into the 'live' state and stamp startedAt. Idempotent —
