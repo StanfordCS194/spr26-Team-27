@@ -1,8 +1,7 @@
 "use server";
 
-import { courses, sessions } from "@spr26/db";
-import { and, eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
+import { questions, sessions } from "@spr26/db";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { requireInstructor } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -34,31 +33,16 @@ export async function endSession(sessionId: string): Promise<void> {
     .where(eq(sessions.id, sessionId));
 }
 
-export async function createSession(formData: FormData): Promise<void> {
-  const instructor = await requireInstructor();
-  const courseId = formData.get("courseId") as string;
-  const title = (formData.get("title") as string)?.trim();
-
-  if (!courseId || !title) return;
-
-  const [course] = await db()
-    .select()
-    .from(courses)
-    .where(
-      and(eq(courses.id, courseId), eq(courses.instructorId, instructor.id)),
-    )
-    .limit(1);
-
-  if (!course) return;
-
-  const [session] = await db()
-    .insert(sessions)
-    .values({
-      courseId: course.id,
-      title,
-      status: "scheduled",
-    })
-    .returning({ id: sessions.id });
-
-  redirect(`/teach/${course.slug}/lectures/${session.id}`);
+// Stamp `answered_at = now()` on a question so the instructor's feed can hide
+// it (or visually demote it) once they've spoken to the question in lecture.
+// Guarded against double-marking via the `IS NULL` clause so a re-click is a
+// no-op rather than overwriting the original timestamp.
+//
+// TODO(auth): same caveat as startSession — gate on the instructor owning the
+// session's course once instructor auth lands.
+export async function markQuestionAnswered(questionId: string): Promise<void> {
+  await db()
+    .update(questions)
+    .set({ answeredAt: new Date() })
+    .where(and(eq(questions.id, questionId), isNull(questions.answeredAt)));
 }

@@ -134,7 +134,7 @@ export default function Topbar({
 // confusion threshold indicator (PRD F19). The toast confirms the signal
 // was sent without making the student commit a typed question.
 function ImLostButton({ sessionId }: { sessionId: string }) {
-  const { lines } = useStudentSession();
+  const { currentAnchorId } = useStudentSession();
   const [confused, setConfused] = useState(false);
   const timerRef = useRef<number | null>(null);
 
@@ -146,11 +146,10 @@ function ImLostButton({ sessionId }: { sessionId: string }) {
   );
 
   const onLost = () => {
-    const anchor = lines[lines.length - 1]?.id ?? null;
     // Fire-and-forget. If the insert fails (network blip, RLS error), we
     // still show the optimistic toast — the student's intent is the
     // valuable signal, the row is just analytics.
-    void recordQuickPrompt(sessionId, "im_lost", anchor);
+    void recordQuickPrompt(sessionId, "im_lost", currentAnchorId);
 
     setConfused(true);
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);

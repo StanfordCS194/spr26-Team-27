@@ -5,8 +5,13 @@ import {
   SourcesTray,
 } from "@/components/in-lecture/CitationPills";
 import { EmptyState } from "@/components/in-lecture/EmptyState";
+import {
+  useStudentSession,
+  type DeferredQuestion,
+} from "@/components/in-lecture/StudentSessionContext";
 import { ToolCallChip } from "@/components/in-lecture/ToolCallChip";
 import { lectureById } from "@/data/lectures";
+import { persistQuestion, recordQuickPrompt } from "@/lib/actions/engagement";
 import { useChat } from "@/lib/useChat";
 import type { Message } from "@/types/messages";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -29,16 +34,13 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
-const QUICK_PROMPTS: readonly string[] = [
-  "Re-explain that",
-  "Give an example",
-  "What just happened?",
-];
+type QuickPromptType = "re_explain" | "give_example" | "what_just_happened";
 
-interface DeferredQuestion {
-  id: string;
-  content: string;
-}
+const QUICK_PROMPTS: readonly { label: string; type: QuickPromptType }[] = [
+  { label: "Re-explain that", type: "re_explain" },
+  { label: "Give an example", type: "give_example" },
+  { label: "What just happened?", type: "what_just_happened" },
+];
 
 export default function AskPanel() {
   const { lectureId } = useParams<{ lectureId: string }>();
@@ -47,7 +49,11 @@ export default function AskPanel() {
   const q = searchParams.get("q") ?? "";
 
   const lecture = lectureId ? lectureById(lectureId) : undefined;
-  const sessionId = lecture?.sessionId ?? "";
+  // Prefer the server-resolved sessionId from context (matches the auth
+  // layer) and fall back to the static lecture mapping for pre-auth demos.
+  const session = useStudentSession();
+  const sessionId =
+    session.sessionId !== "" ? session.sessionId : (lecture?.sessionId ?? "");
   const { messages, streaming, error, send } = useChat(
     lectureId ?? "demo",
     sessionId,
@@ -71,7 +77,6 @@ export default function AskPanel() {
   }, [messages]);
 
   const [deferMode, setDeferMode] = useState(false);
-  const [deferred, setDeferred] = useState<DeferredQuestion[]>([]);
 
   const trimmed = draft.trim();
   const canSend = trimmed.length > 0 && !streaming;
@@ -88,23 +93,58 @@ export default function AskPanel() {
 
   const submit = () => {
     if (!canSend) return;
+    const anchor = session.currentAnchorId;
+    const content = trimmed;
     if (deferMode) {
-      setDeferred((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), content: trimmed },
-      ]);
+      // Persist first, then push the server-assigned id into the queue so
+      // a refresh round-trips to the same row (vs. losing crypto.randomUUID
+      // ids that were never written).
+      if (sessionId) {
+        void persistQuestion(sessionId, content, "deferred", anchor)
+          .then((row) => {
+            session.addDeferredQuestion({ id: row.id, content: row.content });
+          })
+          .catch((err) => {
+            console.error("persistQuestion(deferred) failed", err);
+          });
+      } else {
+        // No session bound (preview / demo) — keep the legacy local-only
+        // behavior so the UI still feels responsive.
+        session.addDeferredQuestion({
+          id: crypto.randomUUID(),
+          content,
+        });
+      }
       clearDraft();
       return;
     }
-    send(trimmed);
+    // "Now" path: kick off the live RAG stream and persist in parallel so
+    // the instructor's QuestionFeed lights up at the same moment the
+    // student sees their typing indicator.
+    if (sessionId) {
+      void persistQuestion(sessionId, content, "immediate", anchor).catch(
+        (err) => {
+          console.error("persistQuestion(immediate) failed", err);
+        },
+      );
+    }
+    send(content);
     clearDraft();
   };
 
   // Quick prompts no longer carry a hand-picked window — the model decides
-  // when to call get_recent vs search_lecture based on the phrasing.
-  const sendQuickPrompt = (prompt: string) => {
+  // when to call get_recent vs search_lecture based on the phrasing. The
+  // recordQuickPrompt insert is fire-and-forget so the chat stream isn't
+  // delayed by a DB round trip.
+  const sendQuickPrompt = (prompt: {
+    label: string;
+    type: QuickPromptType;
+  }) => {
     if (streaming) return;
-    send(prompt);
+    if (sessionId) {
+      void recordQuickPrompt(sessionId, prompt.type, session.currentAnchorId);
+    }
+    send(prompt.label);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -136,7 +176,9 @@ export default function AskPanel() {
       </div>
 
       <div className="flex flex-col gap-3 pt-4">
-        {deferred.length > 0 && <DeferredQueue items={deferred} />}
+        {session.deferredQuestions.length > 0 && (
+          <DeferredQueue items={session.deferredQuestions} />
+        )}
         {error && (
           <p className="text-sm text-red-600" role="alert">
             {error}
@@ -145,13 +187,13 @@ export default function AskPanel() {
         <div className="flex flex-wrap items-center gap-2">
           {QUICK_PROMPTS.map((prompt) => (
             <button
-              key={prompt}
+              key={prompt.type}
               type="button"
               onClick={() => sendQuickPrompt(prompt)}
               disabled={streaming}
               className="bg-primary-contr border-divider text-primary-accent-dark hover:bg-primary-accent rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {prompt}
+              {prompt.label}
             </button>
           ))}
           <div className="ml-auto">
@@ -245,7 +287,8 @@ function InLectureMessage({
   // ReactMarkdown emits text nodes as strings; swap citation markers inside
   // each text node at render time.
   const expandText = (children: ReactNode): ReactNode => {
-    if (typeof children === "string") return renderWithCitations(children, cites);
+    if (typeof children === "string")
+      return renderWithCitations(children, cites);
     if (Array.isArray(children)) return children.map(expandText);
     return children;
   };
@@ -269,27 +312,37 @@ function InLectureMessage({
           strong: ({ children }) => (
             <strong className="font-semibold">{expandText(children)}</strong>
           ),
-          em: ({ children }) => <em className="italic">{expandText(children)}</em>,
+          em: ({ children }) => (
+            <em className="italic">{expandText(children)}</em>
+          ),
           ul: ({ children }) => (
             <ul className="mb-4 list-disc pl-8 last:mb-0">{children}</ul>
           ),
           ol: ({ children }) => (
             <ol className="mb-4 list-decimal pl-8 last:mb-0">{children}</ol>
           ),
-          li: ({ children }) => <li className="mb-1">{expandText(children)}</li>,
+          li: ({ children }) => (
+            <li className="mb-1">{expandText(children)}</li>
+          ),
           code: ({ children }) => (
             <code className="bg-primary-tint/50 rounded px-1.5 py-0.5 font-mono text-base">
               {children}
             </code>
           ),
           h1: ({ children }) => (
-            <h1 className="mb-3 text-2xl font-semibold">{expandText(children)}</h1>
+            <h1 className="mb-3 text-2xl font-semibold">
+              {expandText(children)}
+            </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="mb-3 text-xl font-semibold">{expandText(children)}</h2>
+            <h2 className="mb-3 text-xl font-semibold">
+              {expandText(children)}
+            </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="mb-2 text-lg font-semibold">{expandText(children)}</h3>
+            <h3 className="mb-2 text-lg font-semibold">
+              {expandText(children)}
+            </h3>
           ),
         }}
       >

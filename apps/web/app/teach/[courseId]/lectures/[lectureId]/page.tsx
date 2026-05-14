@@ -1,3 +1,4 @@
+import { ConfusionGauge } from "@/components/instructor/ConfusionGauge";
 import { LiveTranscriptPanel } from "@/components/instructor/LiveTranscriptPanel";
 import { QuestionFeed } from "@/components/instructor/QuestionFeed";
 import { RecordingPendingProvider } from "@/components/instructor/RecordingPendingContext";
@@ -21,7 +22,17 @@ export default async function InstructorLecturePage({
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-4 overflow-hidden p-4 lg:grid-cols-[minmax(0,1fr)_380px]">
           <LiveTranscriptPanel sessionId={sessionId} />
-          <QuestionFeed sessionId={sessionId} />
+          {/* Right rail: confusion gauge on top for the at-a-glance type
+              breakdown, then the live question feed taking the remaining
+              height. */}
+          <div className="flex min-h-0 flex-col gap-4">
+            <div className="border-divider bg-primary-contr shrink-0 overflow-hidden rounded-2xl border shadow-sm">
+              <ConfusionGauge sessionId={sessionId} />
+            </div>
+            <div className="min-h-0 flex-1">
+              <QuestionFeed sessionId={sessionId} />
+            </div>
+          </div>
         </div>
         <SessionBar
           sessionId={sessionId}

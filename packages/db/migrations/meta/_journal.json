@@ -43,6 +43,13 @@
       "when": 1778832000003,
       "tag": "0005_transcript_chunks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778832000004,
+      "tag": "0006_question_answered_at",
+      "breakpoints": true
     }
   ]
 }
