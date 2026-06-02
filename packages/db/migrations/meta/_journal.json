@@ -50,6 +50,20 @@
       "when": 1778832000004,
       "tag": "0006_question_answered_at",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778832000005,
+      "tag": "0007_course_materials_ingest",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778832000006,
+      "tag": "0008_material_session",
+      "breakpoints": true
     }
   ]
 }

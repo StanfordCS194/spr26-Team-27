@@ -237,14 +237,35 @@ export const transcriptChunks = pgTable(
   ],
 ).enableRLS();
 
+// Ingestion lifecycle of an uploaded material: a row is created `parsing`,
+// flipped to `ready` once its chunks are embedded, or `failed` (with `error`
+// set) if LlamaParse / embedding threw. `pending` is the column default for
+// rows created outside the upload route.
+export const courseMaterialStatus = pgEnum("course_material_status", [
+  "pending",
+  "parsing",
+  "ready",
+  "failed",
+]);
+
 export const courseMaterials = pgTable("course_materials", {
   id: uuid("id").primaryKey().defaultRandom(),
   courseId: uuid("course_id")
     .notNull()
     .references(() => courses.id, { onDelete: "cascade" }),
+  // Optional lecture association. NULL = course-wide material (e.g. syllabus);
+  // set = uploaded on a specific lecture's page. RAG search stays course-wide
+  // regardless — this is for organization/display. On lecture delete the
+  // material survives and falls back to course-wide.
+  sessionId: uuid("session_id").references(() => sessions.id, {
+    onDelete: "set null",
+  }),
   kind: courseMaterialKind("kind").notNull(),
   title: text("title").notNull(),
   sourceUrl: text("source_url"),
+  status: courseMaterialStatus("status").notNull().default("pending"),
+  error: text("error"),
+  pageCount: integer("page_count"),
   uploadedAt: timestamp("uploaded_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -259,6 +280,12 @@ export const courseMaterialChunks = pgTable(
       .references(() => courseMaterials.id, { onDelete: "cascade" }),
     chunkIndex: integer("chunk_index").notNull(),
     content: text("content").notNull(),
+    // Contextual Retrieval: a ~1-sentence blurb situating this chunk within
+    // the whole document (Anthropic's technique). Prepended to `content`
+    // before embedding, and folded into the generated `fts` tsvector. The
+    // `fts` column itself lives only in the migration — it's GENERATED, so
+    // it's never written from app code and is queried via raw SQL.
+    context: text("context"),
     pageNumber: integer("page_number"),
     embedding: vector("embedding"),
   },

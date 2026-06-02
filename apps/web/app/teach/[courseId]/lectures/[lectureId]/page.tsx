@@ -3,18 +3,15 @@ import { LiveTranscriptPanel } from "@/components/instructor/LiveTranscriptPanel
 import { QuestionFeed } from "@/components/instructor/QuestionFeed";
 import { RecordingPendingProvider } from "@/components/instructor/RecordingPendingContext";
 import { SessionBar } from "@/components/instructor/SessionBar";
-import { lectureById } from "@/data/lectures";
-import { notFound } from "next/navigation";
 
 export default async function InstructorLecturePage({
   params,
 }: {
   params: Promise<{ courseId: string; lectureId: string }>;
 }) {
+  // [lectureId] is the session UUID; the layout already gated ownership.
   const { courseId, lectureId } = await params;
-  const lecture = lectureById(lectureId);
-  if (!lecture) notFound();
-  const sessionId = lecture.sessionId;
+  const sessionId = lectureId;
   const shareUrl = `/learn/${courseId}/lectures/${lectureId}/ask`;
 
   return (

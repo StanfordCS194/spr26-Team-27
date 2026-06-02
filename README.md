@@ -51,6 +51,13 @@ packages/
   → Whisper (stubbed) → `transcript_items` insert → Realtime broadcast.
 - **Embeddings** — async after insert; OpenAI `text-embedding-3-small`
   (stubbed). RAG over transcript + course material chunks.
+- **Course materials** — instructors upload files at `/teach/<slug>/materials`;
+  `POST /api/materials` parses them with **LlamaParse** (per-page markdown),
+  chunks, adds a Contextual-Retrieval blurb per chunk (OpenAI `gpt-5.4-nano`,
+  same key as embeddings; the document prefix is auto prompt-cached), embeds,
+  and stores in `course_material_chunks`. The QA tool `search_course_materials`
+  retrieves with **hybrid** vector + Postgres FTS (generated `fts` tsvector)
+  fused by Reciprocal Rank Fusion.
 
 ## Running locally
 
@@ -67,6 +74,9 @@ Required env vars (`apps/web/.env.local`):
 - `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase project
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only, used by `/api/transcribe` and `/api/embed`
 - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` — at least one, for `/api/qa`
+- `LLAMA_CLOUD_API_KEY` — for `/api/materials` course-material parsing
+  (LlamaParse). `OPENAI_API_KEY` is also required — it both embeds the chunks
+  and writes the per-chunk contextual blurb (`gpt-5.4-nano`).
 
 ## Deployment (Vercel)
 
@@ -78,13 +88,13 @@ Required env vars (`apps/web/.env.local`):
 
 So we can iterate in parallel without stepping on each other:
 
-| Slice | Owner | Lives in |
-| --- | --- | --- |
-| DB schema, RLS policies, realtime publication | Zara | `packages/db/{src/schema.ts,migrations/*}` |
-| Backend endpoints (qa, transcribe, embed, RAG) | Amrit | `apps/web/app/api/**`, `packages/ai-service/**` |
+| Slice                                                  | Owner  | Lives in                                                     |
+| ------------------------------------------------------ | ------ | ------------------------------------------------------------ |
+| DB schema, RLS policies, realtime publication          | Zara   | `packages/db/{src/schema.ts,migrations/*}`                   |
+| Backend endpoints (qa, transcribe, embed, RAG)         | Amrit  | `apps/web/app/api/**`, `packages/ai-service/**`              |
 | Instructor UI (record, live dashboard, concept checks) | Vedant | `apps/web/app/teach/**`, `apps/web/components/instructor/**` |
-| Student UI (Ask, transcript, question intake) | Kelly | `apps/web/app/learn/**`, `apps/web/components/in-lecture/**` |
-| Landing page / marketing | Kelly | `apps/web/app/page.tsx`, `apps/web/components/landing/**` |
+| Student UI (Ask, transcript, question intake)          | Kelly  | `apps/web/app/learn/**`, `apps/web/components/in-lecture/**` |
+| Landing page / marketing                               | Kelly  | `apps/web/app/page.tsx`, `apps/web/components/landing/**`    |
 
 Rules of the road:
 
