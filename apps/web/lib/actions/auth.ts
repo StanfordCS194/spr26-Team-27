@@ -19,6 +19,18 @@ function field(formData: FormData, key: string): string {
   return typeof v === "string" ? v : "";
 }
 
+// Resolve the directory role for an email so we can route instructors to
+// /teach and students to /learn after auth. Defaults to "student" when no
+// directory row is found yet (the auth trigger may lag a hair on first login).
+async function roleForEmail(email: string): Promise<"student" | "instructor"> {
+  const [row] = await db()
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+  return row?.role === "instructor" ? "instructor" : "student";
+}
+
 export async function signIn(formData: FormData): Promise<void> {
   const email = field(formData, "email").trim().toLowerCase();
   const password = field(formData, "password");
@@ -30,19 +42,30 @@ export async function signIn(formData: FormData): Promise<void> {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) backTo("/login", error.message);
 
-  redirect("/learn");
+  // Route by role so the student and instructor apps stay separate.
+  const role = await roleForEmail(email);
+  redirect(role === "instructor" ? "/teach" : "/learn");
 }
 
 export async function signUp(formData: FormData): Promise<void> {
   const email = field(formData, "email").trim().toLowerCase();
   const password = field(formData, "password");
   const displayName = field(formData, "display_name").trim();
-  const courseSlug = field(formData, "course_slug").trim();
+  const role: "student" | "instructor" =
+    field(formData, "role") === "instructor" ? "instructor" : "student";
+  // Students join an existing course by code; instructors create one.
+  const courseSlug = field(formData, "course_slug")
+    .trim()
+    .replace(/^\/?(learn\/|teach\/)?/, "")
+    .toLowerCase();
+  const courseTitle = field(formData, "course_title").trim();
 
   if (!email || !password)
     backTo("/signup", "Email and password are required.");
   if (password.length < 6)
     backTo("/signup", "Password must be at least 6 characters.");
+  if (role === "instructor" && !courseSlug)
+    backTo("/signup", "Pick a course code for your class.");
 
   const supabase = await createClient();
   if (!supabase) backTo("/signup", "Supabase is not configured on the server.");
@@ -53,7 +76,7 @@ export async function signUp(formData: FormData): Promise<void> {
     options: {
       data: {
         display_name: displayName || null,
-        role: "student",
+        role,
       },
     },
   });
@@ -70,44 +93,65 @@ export async function signUp(formData: FormData): Promise<void> {
       .values({
         id: authUserId,
         email,
-        role: "student",
+        role,
         displayName: displayName || null,
       })
       .onConflictDoNothing({ target: users.email });
   }
 
-  // If a course code was provided, enroll the new user in it right away so
-  // their dashboard isn't empty on first load. Silently no-ops when the slug
-  // doesn't exist — we'd rather complete signup than block on a typo.
-  if (courseSlug && authUserId) {
+  // Resolve the directory row requireStudent/requireInstructor will land on
+  // (auth id wins; falls back to email-matched seed row).
+  const [directoryUser] = authUserId
+    ? await db()
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1)
+    : [];
+
+  if (role === "instructor" && courseSlug && directoryUser) {
+    // Create the instructor's course. If the code is taken, bounce back with
+    // an error rather than silently attaching them to someone else's course.
+    const [existing] = await db()
+      .select({ id: courses.id, instructorId: courses.instructorId })
+      .from(courses)
+      .where(eq(courses.slug, courseSlug))
+      .limit(1);
+    if (existing && existing.instructorId !== directoryUser.id) {
+      backTo("/signup", `Course code "${courseSlug}" is already taken.`);
+    }
+    if (!existing) {
+      await db()
+        .insert(courses)
+        .values({
+          slug: courseSlug,
+          title: courseTitle || courseSlug,
+          instructorId: directoryUser.id,
+        })
+        .onConflictDoNothing({ target: courses.slug });
+    }
+  } else if (role === "student" && courseSlug && directoryUser) {
+    // Enroll the new student so their dashboard isn't empty. Silently no-ops
+    // when the slug doesn't exist — we'd rather complete signup than block on
+    // a typo.
     const [course] = await db()
       .select({ id: courses.id })
       .from(courses)
       .where(eq(courses.slug, courseSlug))
       .limit(1);
-
     if (course) {
-      // Find the directory row that requireStudent will resolve to (auth id
-      // wins; falls back to email-matched seed row).
-      const [directoryUser] = await db()
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
-
-      if (directoryUser) {
-        await db()
-          .insert(enrollments)
-          .values({ userId: directoryUser.id, courseId: course.id })
-          .onConflictDoNothing();
-      }
+      await db()
+        .insert(enrollments)
+        .values({ userId: directoryUser.id, courseId: course.id })
+        .onConflictDoNothing();
     }
   }
 
   // Supabase issues a session cookie on signUp (when email confirmation is
-  // disabled, which is the default for new projects). If confirmation is
-  // ON, the user lands on /login until they confirm.
-  redirect(data.session ? "/learn" : "/login?info=check_email");
+  // disabled, which is the default for new projects). If confirmation is ON,
+  // the user lands on /login until they confirm.
+  const home = role === "instructor" ? "/teach" : "/learn";
+  redirect(data.session ? home : "/login?info=check_email");
 }
 
 export async function signOut(): Promise<void> {

@@ -10,7 +10,6 @@ import {
   type DeferredQuestion,
 } from "@/components/in-lecture/StudentSessionContext";
 import { ToolCallChip } from "@/components/in-lecture/ToolCallChip";
-import { lectureById } from "@/data/lectures";
 import { persistQuestion, recordQuickPrompt } from "@/lib/actions/engagement";
 import { useChat } from "@/lib/useChat";
 import type { Message } from "@/types/messages";
@@ -48,12 +47,11 @@ export default function AskPanel() {
   const router = useRouter();
   const q = searchParams.get("q") ?? "";
 
-  const lecture = lectureId ? lectureById(lectureId) : undefined;
-  // Prefer the server-resolved sessionId from context (matches the auth
-  // layer) and fall back to the static lecture mapping for pre-auth demos.
+  // sessionId comes from the server-resolved session context (the lecture
+  // layout). The URL [lectureId] is itself the session UUID.
   const session = useStudentSession();
   const sessionId =
-    session.sessionId !== "" ? session.sessionId : (lecture?.sessionId ?? "");
+    session.sessionId !== "" ? session.sessionId : (lectureId ?? "");
   const { messages, streaming, error, send } = useChat(
     lectureId ?? "demo",
     sessionId,

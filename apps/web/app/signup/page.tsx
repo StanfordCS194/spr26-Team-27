@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { signUp } from "@/lib/actions/auth";
+import { SignupForm } from "@/components/auth/SignupForm";
 
 export default async function SignupPage({
   searchParams,
@@ -25,8 +25,8 @@ export default async function SignupPage({
             Create your account
           </h1>
           <p className="text-secondary text-sm leading-relaxed">
-            Already in a class? Enter the course code your instructor gave you
-            and we&apos;ll drop you straight into the dashboard.
+            Students join a class with a course code; teachers spin one up in
+            seconds.
           </p>
         </div>
 
@@ -39,66 +39,7 @@ export default async function SignupPage({
           </p>
         )}
 
-        <form action={signUp} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-secondary text-xs font-semibold tracking-widest uppercase">
-              Name
-            </span>
-            <input
-              type="text"
-              name="display_name"
-              autoComplete="name"
-              placeholder="Your name"
-              className="border-divider focus:outline-primary-accent rounded-lg border px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-secondary text-xs font-semibold tracking-widest uppercase">
-              Email
-            </span>
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              className="border-divider focus:outline-primary-accent rounded-lg border px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-secondary text-xs font-semibold tracking-widest uppercase">
-              Password
-            </span>
-            <input
-              type="password"
-              name="password"
-              autoComplete="new-password"
-              required
-              minLength={6}
-              className="border-divider focus:outline-primary-accent rounded-lg border px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-secondary text-xs font-semibold tracking-widest uppercase">
-              Course code (optional)
-            </span>
-            <input
-              type="text"
-              name="course_slug"
-              defaultValue={defaultCourseSlug}
-              placeholder="piech109"
-              className="border-divider focus:outline-primary-accent rounded-lg border px-3 py-2 text-sm"
-            />
-            <span className="text-secondary text-xs">
-              You can also join a course later from your dashboard.
-            </span>
-          </label>
-          <button
-            type="submit"
-            className="bg-primary-accent hover:bg-primary-accent-dark mt-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition"
-          >
-            Create account
-          </button>
-        </form>
+        <SignupForm defaultCourseSlug={defaultCourseSlug} />
 
         <p className="text-secondary text-center text-sm">
           Already have an account?{" "}

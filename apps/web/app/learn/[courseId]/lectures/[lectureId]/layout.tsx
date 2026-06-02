@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 
 import { StudentSessionProvider } from "@/components/in-lecture/StudentSessionContext";
 import Topbar from "@/components/in-lecture/Topbar";
-import { lectureById } from "@/data/lectures";
 import { requireStudent } from "@/lib/auth";
 import { getSessionForStudent } from "@/lib/queries/dashboard";
 import {
@@ -20,18 +19,9 @@ export default async function StudentLectureLayout({
 }) {
   const { courseId, lectureId } = await params;
 
-  // Amrit's URL contract: [lectureId] is the friendly id ("1" / "2" / "3")
-  // and apps/web/data/lectures.ts owns the mapping to a real session UUID.
-  // Resolve here so the rest of the layout works in terms of session.id.
-  const lecture = lectureById(lectureId);
-  if (!lecture) notFound();
-
+  // [lectureId] is the session UUID — the session row is the lecture.
   const student = await requireStudent();
-  const ctx = await getSessionForStudent(
-    student.id,
-    courseId,
-    lecture.sessionId,
-  );
+  const ctx = await getSessionForStudent(student.id, courseId, lectureId);
   if (!ctx) notFound();
 
   // Idempotent: every engagement action downstream depends on having a

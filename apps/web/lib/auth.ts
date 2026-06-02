@@ -68,3 +68,54 @@ export async function getStudentOrNull(): Promise<User | null> {
 
   return student?.role === "student" ? student : null;
 }
+
+// Instructor mirror of requireStudent: resolves the signed-in user to their
+// directory row and gates on role === "instructor". Redirects to /login when
+// there's no session / no row, and to /learn when a student lands on an
+// instructor route (so the two apps stay separate without a hard error).
+export async function requireInstructor(): Promise<User> {
+  const supabase = await createClient();
+  if (!supabase) redirect("/login");
+
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser?.email) {
+    redirect("/login");
+  }
+
+  const [instructor] = await db()
+    .select()
+    .from(users)
+    .where(or(eq(users.id, authUser.id), eq(users.email, authUser.email)))
+    .limit(1);
+
+  if (!instructor) {
+    redirect("/login?error=no_account");
+  }
+  if (instructor.role !== "instructor") {
+    redirect("/learn");
+  }
+
+  return instructor;
+}
+
+export async function getInstructorOrNull(): Promise<User | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+
+  if (!authUser?.email) return null;
+
+  const [instructor] = await db()
+    .select()
+    .from(users)
+    .where(or(eq(users.id, authUser.id), eq(users.email, authUser.email)))
+    .limit(1);
+
+  return instructor?.role === "instructor" ? instructor : null;
+}

@@ -1,9 +1,71 @@
 "use server";
 
-import { questions, sessions } from "@spr26/db";
+import { courses, questions, sessions } from "@spr26/db";
 import { and, eq, isNull } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
+import { requireInstructor } from "@/lib/auth";
 import { db } from "@/lib/db";
+
+function field(formData: FormData, key: string): string {
+  const v = formData.get(key);
+  return typeof v === "string" ? v : "";
+}
+
+// Create a new course owned by the signed-in instructor. The slug is the
+// human-typed "course code" students join with — normalized to lowercase and
+// stripped of any accidental "/teach/" prefix. Bounces back with ?error when
+// the code is already taken by someone else.
+export async function createCourse(formData: FormData): Promise<void> {
+  const me = await requireInstructor();
+  const slug = field(formData, "course_slug")
+    .trim()
+    .replace(/^\/?(learn\/|teach\/)?/, "")
+    .toLowerCase();
+  const title = field(formData, "course_title").trim() || slug;
+  if (!slug) redirect("/teach?error=missing_slug");
+
+  const [existing] = await db()
+    .select({ id: courses.id, instructorId: courses.instructorId })
+    .from(courses)
+    .where(eq(courses.slug, slug))
+    .limit(1);
+
+  if (existing && existing.instructorId !== me.id) {
+    redirect(`/teach?error=slug_taken&slug=${encodeURIComponent(slug)}`);
+  }
+  if (!existing) {
+    await db()
+      .insert(courses)
+      .values({ slug, title, instructorId: me.id })
+      .onConflictDoNothing({ target: courses.slug });
+  }
+
+  redirect(`/teach/${slug}`);
+}
+
+// Schedule a new lecture (a `sessions` row) under a course the instructor
+// owns. Created in the `scheduled` state; the SessionBar flips it to `live`
+// when recording starts.
+export async function createLecture(formData: FormData): Promise<void> {
+  const me = await requireInstructor();
+  const slug = field(formData, "course_slug").trim().toLowerCase();
+  const title = field(formData, "title").trim();
+  if (!slug || !title) redirect(`/teach/${slug}?error=missing_title`);
+
+  const [course] = await db()
+    .select({ id: courses.id })
+    .from(courses)
+    .where(and(eq(courses.slug, slug), eq(courses.instructorId, me.id)))
+    .limit(1);
+  if (!course) redirect("/teach?error=not_owner");
+
+  await db()
+    .insert(sessions)
+    .values({ courseId: course.id, title, status: "scheduled" });
+
+  redirect(`/teach/${slug}`);
+}
 
 // Flip a session into the 'live' state and stamp startedAt. Idempotent —
 // calling on an already-live session just refreshes startedAt to "now",

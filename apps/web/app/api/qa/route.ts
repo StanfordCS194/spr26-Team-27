@@ -7,13 +7,7 @@ import {
 } from "@spr26/db";
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
-import {
-  embed,
-  stepCountIs,
-  streamText,
-  tool,
-  type LanguageModel,
-} from "ai";
+import { embed, stepCountIs, streamText, tool, type LanguageModel } from "ai";
 import { and, asc, eq, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -119,7 +113,7 @@ async function handle(req: Request) {
   // empty when nothing's been uploaded for this course yet.
   const searchCourseMaterials = tool({
     description:
-      "Semantic search over course materials uploaded for this class (slides, notes, readings). Use when the question references content that may live in those materials rather than today's transcript. Returns numbered [M1], [M2]... results.",
+      "Hybrid search (semantic + keyword) over course materials uploaded for this class (slides, notes, readings). Use when the question references content that may live in those materials rather than today's transcript. Returns numbered [M1], [M2]... results.",
     inputSchema: z.object({
       query: z.string().describe("Focused search query."),
       k: z.number().int().min(1).max(8).default(4),
@@ -128,21 +122,27 @@ async function handle(req: Request) {
       if (!process.env.OPENAI_API_KEY) {
         return { results: [], note: "OPENAI_API_KEY not set" };
       }
+
+      const fields = {
+        chunkId: courseMaterialChunks.id,
+        materialId: courseMaterialChunks.courseMaterialId,
+        chunkIndex: courseMaterialChunks.chunkIndex,
+        content: courseMaterialChunks.content,
+        pageNumber: courseMaterialChunks.pageNumber,
+        materialTitle: courseMaterials.title,
+      };
+      // Candidate pool pulled from each retriever before fusing down to k.
+      const pool = Math.max(k * 3, 12);
+
       const { embedding } = await embed({
         model: openai.embedding(EMBED_MODEL),
         value: query,
       });
       const vec = `[${embedding.join(",")}]`;
 
-      const hits = await db()
-        .select({
-          chunkId: courseMaterialChunks.id,
-          materialId: courseMaterialChunks.courseMaterialId,
-          chunkIndex: courseMaterialChunks.chunkIndex,
-          content: courseMaterialChunks.content,
-          pageNumber: courseMaterialChunks.pageNumber,
-          materialTitle: courseMaterials.title,
-        })
+      // Semantic retrieval: nearest neighbours by cosine distance.
+      const vectorHits = await db()
+        .select(fields)
         .from(courseMaterialChunks)
         .innerJoin(
           courseMaterials,
@@ -155,12 +155,53 @@ async function handle(req: Request) {
           ),
         )
         .orderBy(sql`${courseMaterialChunks.embedding} <=> ${vec}::vector`)
-        .limit(k);
+        .limit(pool);
+
+      // Lexical retrieval over the generated `fts` tsvector — catches exact
+      // jargon/notation that embeddings can miss. `fts` is a generated column,
+      // so it's referenced by raw name rather than the Drizzle schema.
+      const ftsHits = await db()
+        .select(fields)
+        .from(courseMaterialChunks)
+        .innerJoin(
+          courseMaterials,
+          eq(courseMaterialChunks.courseMaterialId, courseMaterials.id),
+        )
+        .where(
+          and(
+            eq(courseMaterials.courseId, courseId),
+            sql`course_material_chunks.fts @@ websearch_to_tsquery('english', ${query})`,
+          ),
+        )
+        .orderBy(
+          sql`ts_rank(course_material_chunks.fts, websearch_to_tsquery('english', ${query})) DESC`,
+        )
+        .limit(pool);
+
+      // Reciprocal Rank Fusion: a chunk ranked highly by either retriever
+      // floats to the top; chunks found by both win. k=60 is the usual RRF
+      // constant.
+      const RRF_K = 60;
+      const scores = new Map<string, number>();
+      const byId = new Map<string, (typeof vectorHits)[number]>();
+      for (const list of [vectorHits, ftsHits]) {
+        list.forEach((row, rank) => {
+          byId.set(row.chunkId, row);
+          scores.set(
+            row.chunkId,
+            (scores.get(row.chunkId) ?? 0) + 1 / (RRF_K + rank + 1),
+          );
+        });
+      }
+      const hits = [...scores.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, k)
+        .map(([id]) => byId.get(id)!);
 
       if (hits.length === 0) {
         return {
           results: [],
-          note: "No course materials uploaded yet for this course.",
+          note: "No course materials matched for this course.",
         };
       }
 
