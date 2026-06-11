@@ -5,12 +5,21 @@ import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { markQuestionAnswered } from "@/lib/actions/instructor";
 import {
+  clusterQuestions,
+  type QuestionCluster,
+} from "@/lib/classroom-intelligence";
+import {
   useLiveQuestions,
   type LiveQuestion,
 } from "@/lib/realtime/useLiveQuestions";
 import { useLiveTranscript } from "@/lib/realtime/useLiveTranscript";
 import { useMemo, useState, useTransition } from "react";
-import { MdAccessTime, MdCheck, MdQuestionAnswer } from "react-icons/md";
+import {
+  MdAccessTime,
+  MdCheck,
+  MdQuestionAnswer,
+  MdTopic,
+} from "react-icons/md";
 
 type AnchorIndex = Record<
   string,
@@ -32,21 +41,7 @@ export function QuestionFeed({ sessionId }: { sessionId: string }) {
     return map;
   }, [transcript]);
 
-  // Two-pass sort: unanswered above answered, immediate above deferred,
-  // then by ask time (newest first). Stable JS sort gives this for free
-  // when we score each row once.
-  const sorted = useMemo(() => {
-    const score = (q: LiveQuestion): number => {
-      const answered = q.answered_at ? 100 : 0;
-      const deferred = q.mode === "deferred" ? 10 : 0;
-      return answered + deferred;
-    };
-    return [...questions].sort((a, b) => {
-      const s = score(a) - score(b);
-      if (s !== 0) return s;
-      return new Date(b.asked_at).getTime() - new Date(a.asked_at).getTime();
-    });
-  }, [questions]);
+  const clusters = useMemo(() => clusterQuestions(questions), [questions]);
 
   const openCount = questions.filter((q) => !q.answered_at).length;
 
@@ -72,15 +67,11 @@ export function QuestionFeed({ sessionId }: { sessionId: string }) {
             />
           ) : (
             <ul className="flex flex-col gap-2.5 px-4 py-4">
-              {sorted.map((q) => (
-                <QuestionRow
-                  key={q.id}
-                  question={q}
-                  anchor={
-                    q.anchor_transcript_item_id
-                      ? anchorIndex[q.anchor_transcript_item_id]
-                      : undefined
-                  }
+              {clusters.map((cluster) => (
+                <QuestionClusterCard
+                  key={cluster.key}
+                  cluster={cluster}
+                  anchorIndex={anchorIndex}
                 />
               ))}
             </ul>
@@ -88,6 +79,49 @@ export function QuestionFeed({ sessionId }: { sessionId: string }) {
         </div>
       </CardBody>
     </Card>
+  );
+}
+
+function QuestionClusterCard({
+  cluster,
+  anchorIndex,
+}: {
+  cluster: QuestionCluster;
+  anchorIndex: AnchorIndex;
+}) {
+  const openCount = cluster.questions.filter((q) => !q.answered_at).length;
+
+  return (
+    <li className="border-divider bg-primary-bg/40 overflow-hidden rounded-xl border">
+      <div className="border-divider flex items-start justify-between gap-3 border-b px-3.5 py-3">
+        <div className="min-w-0">
+          <p className="text-primary flex items-center gap-1.5 truncate text-sm font-semibold">
+            <MdTopic className="text-primary-accent h-4 w-4 shrink-0" />
+            {cluster.title}
+          </p>
+          <p className="text-secondary mt-1 text-xs">
+            {openCount} open · {cluster.count} similar question
+            {cluster.count === 1 ? "" : "s"}
+          </p>
+        </div>
+        <Badge tone={cluster.count > 1 ? "accent" : "neutral"}>
+          {cluster.count}x
+        </Badge>
+      </div>
+      <ul className="flex flex-col divide-y divide-stone-200/80">
+        {cluster.questions.map((q) => (
+          <QuestionRow
+            key={q.id}
+            question={q}
+            anchor={
+              q.anchor_transcript_item_id
+                ? anchorIndex[q.anchor_transcript_item_id]
+                : undefined
+            }
+          />
+        ))}
+      </ul>
+    </li>
   );
 }
 
@@ -126,11 +160,7 @@ function QuestionRow({
   };
 
   return (
-    <li
-      className={`border-divider bg-primary-bg/40 rounded-xl border p-3.5 transition ${
-        answered ? "opacity-50" : ""
-      }`}
-    >
+    <li className={`px-3.5 py-3 transition ${answered ? "opacity-50" : ""}`}>
       <div className="flex items-center justify-between gap-2 pb-2">
         <div className="flex items-center gap-1.5">
           <Badge tone={question.mode === "immediate" ? "accent" : "warning"}>

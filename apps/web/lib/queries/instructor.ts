@@ -1,6 +1,13 @@
 import "server-only";
 
-import { courses, sessions, type Course, type Session } from "@spr26/db";
+import {
+  courses,
+  questions,
+  quickPromptSignals,
+  sessions,
+  type Course,
+  type Session,
+} from "@spr26/db";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -54,6 +61,18 @@ export interface InstructorCourseDetail {
   scheduledSessions: Session[];
   endedSessions: Session[];
   allSessions: Session[];
+  analytics: InstructorCourseAnalytics;
+}
+
+export interface InstructorCourseAnalytics {
+  lectureCount: number;
+  totalQuestions: number;
+  totalSignals: number;
+  averageQuestionsPerLecture: number;
+  busiestLectureTitle: string | null;
+  busiestLectureQuestionCount: number;
+  topSignal: string | null;
+  topSignalCount: number;
 }
 
 // A single course the instructor owns, with its lectures bucketed by status.
@@ -81,6 +100,73 @@ export async function getCourseForInstructor(
     scheduledSessions: all.filter((s) => s.status === "scheduled"),
     endedSessions: all.filter((s) => s.status === "ended"),
     allSessions: all,
+    analytics: await getCourseAnalytics(all),
+  };
+}
+
+async function getCourseAnalytics(
+  allSessions: readonly Session[],
+): Promise<InstructorCourseAnalytics> {
+  if (allSessions.length === 0) {
+    return {
+      lectureCount: 0,
+      totalQuestions: 0,
+      totalSignals: 0,
+      averageQuestionsPerLecture: 0,
+      busiestLectureTitle: null,
+      busiestLectureQuestionCount: 0,
+      topSignal: null,
+      topSignalCount: 0,
+    };
+  }
+
+  const ids = allSessions.map((session) => session.id);
+  const [questionRows, signalRows] = await Promise.all([
+    db()
+      .select({ sessionId: questions.sessionId })
+      .from(questions)
+      .where(inArray(questions.sessionId, ids)),
+    db()
+      .select({
+        sessionId: quickPromptSignals.sessionId,
+        promptType: quickPromptSignals.promptType,
+      })
+      .from(quickPromptSignals)
+      .where(inArray(quickPromptSignals.sessionId, ids)),
+  ]);
+
+  const questionCounts = new Map<string, number>();
+  for (const q of questionRows) {
+    questionCounts.set(q.sessionId, (questionCounts.get(q.sessionId) ?? 0) + 1);
+  }
+
+  const signalCounts = new Map<string, number>();
+  for (const signal of signalRows) {
+    signalCounts.set(
+      signal.promptType,
+      (signalCounts.get(signal.promptType) ?? 0) + 1,
+    );
+  }
+
+  const busiest = allSessions
+    .map((session) => ({
+      session,
+      count: questionCounts.get(session.id) ?? 0,
+    }))
+    .sort((a, b) => b.count - a.count)[0];
+  const topSignal =
+    [...signalCounts.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+
+  return {
+    lectureCount: allSessions.length,
+    totalQuestions: questionRows.length,
+    totalSignals: signalRows.length,
+    averageQuestionsPerLecture:
+      Math.round((questionRows.length / allSessions.length) * 10) / 10,
+    busiestLectureTitle: busiest?.count ? busiest.session.title : null,
+    busiestLectureQuestionCount: busiest?.count ?? 0,
+    topSignal: topSignal?.[0] ?? null,
+    topSignalCount: topSignal?.[1] ?? 0,
   };
 }
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { courses, questions, sessions } from "@spr26/db";
+import { conceptChecks, courses, questions, sessions } from "@spr26/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
@@ -106,4 +106,35 @@ export async function markQuestionAnswered(questionId: string): Promise<void> {
     .update(questions)
     .set({ answeredAt: new Date() })
     .where(and(eq(questions.id, questionId), isNull(questions.answeredAt)));
+}
+
+export async function publishConceptCheck(
+  sessionId: string,
+  prompt: string,
+  choices: string[],
+): Promise<void> {
+  const me = await requireInstructor();
+  const trimmedPrompt = prompt.trim();
+  const cleanedChoices = choices.map((choice) => choice.trim()).filter(Boolean);
+
+  if (!trimmedPrompt) throw new Error("Concept check prompt is required.");
+  if (cleanedChoices.length < 2) {
+    throw new Error("Add at least two answer choices.");
+  }
+
+  const [owned] = await db()
+    .select({ id: sessions.id })
+    .from(sessions)
+    .innerJoin(courses, eq(sessions.courseId, courses.id))
+    .where(and(eq(sessions.id, sessionId), eq(courses.instructorId, me.id)))
+    .limit(1);
+
+  if (!owned) throw new Error("You do not own this lecture.");
+
+  await db().insert(conceptChecks).values({
+    sessionId,
+    prompt: trimmedPrompt,
+    kind: "multiple_choice",
+    choices: cleanedChoices,
+  });
 }

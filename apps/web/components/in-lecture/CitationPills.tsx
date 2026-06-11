@@ -1,7 +1,21 @@
 "use client";
 
+/* eslint-disable react-refresh/only-export-components */
+
 import type { CitationManifest, MaterialCitation } from "@/lib/qa";
 import type { ReactNode } from "react";
+
+interface TranscriptCitation {
+  label: string;
+  totalSeconds: number;
+  preview?: string;
+}
+
+interface TranscriptLine {
+  timestamp: string;
+  content: string;
+  timestampSeconds?: number;
+}
 
 // Two citation formats live in the answer text:
 //   [HH:MM]  → transcript moment (rendered as a pin that links to that line)
@@ -93,26 +107,138 @@ function MaterialPin({ citation }: { citation: MaterialCitation }) {
 
 export function SourcesTray({
   manifest,
+  answerText,
+  transcriptLines = [],
 }: {
   manifest: CitationManifest | undefined;
+  answerText?: string;
+  transcriptLines?: readonly TranscriptLine[];
 }) {
-  if (!manifest || manifest.materials.length === 0) return null;
+  const transcriptCitations = extractTranscriptCitations(
+    answerText ?? "",
+    transcriptLines,
+  );
+  const materialCitations = manifest?.materials ?? [];
+
+  if (materialCitations.length === 0 && transcriptCitations.length === 0) {
+    return null;
+  }
+
   return (
     <div className="border-divider bg-primary-bg/40 mt-4 flex flex-col gap-1.5 rounded-lg border p-3 text-xs">
-      <p className="text-secondary mb-1 text-[10px] font-semibold tracking-widest uppercase">
-        Course material citations
-      </p>
-      {manifest.materials.map((c) => (
-        <div key={c.n} className="flex items-start gap-2">
-          <span className="bg-secondary-tint text-secondary-accent-dark mt-0.5 inline-flex h-4 w-6 shrink-0 items-center justify-center rounded text-[10px] font-semibold">
-            M{c.n}
-          </span>
-          <span className="text-secondary">
-            {c.materialTitle}
-            {c.pageNumber !== null ? ` · p${c.pageNumber}` : ""}
-          </span>
-        </div>
-      ))}
+      {transcriptCitations.length > 0 ? (
+        <SourceGroup title="Transcript citations">
+          {transcriptCitations.map((c) => (
+            <button
+              key={c.totalSeconds}
+              type="button"
+              onClick={() => jumpToTranscript(c.totalSeconds)}
+              className="hover:bg-primary-tint/40 flex items-start gap-2 rounded-md p-1 text-left transition"
+            >
+              <span className="bg-primary-tint text-primary-accent-dark mt-0.5 inline-flex h-5 min-w-10 shrink-0 items-center justify-center rounded font-mono text-[10px] font-semibold">
+                {c.label}
+              </span>
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="text-primary text-xs">
+                  Live transcript moment
+                </span>
+                <span className="text-secondary line-clamp-2 text-[11px] leading-4">
+                  {c.preview ??
+                    "Used because the answer cites this point in the lecture."}
+                </span>
+              </span>
+            </button>
+          ))}
+        </SourceGroup>
+      ) : null}
+
+      {materialCitations.length > 0 ? (
+        <SourceGroup title="Course material citations">
+          {materialCitations.map((c) => (
+            <div key={c.n} className="flex items-start gap-2 rounded-md p-1">
+              <span className="bg-secondary-tint text-secondary-accent-dark mt-0.5 inline-flex h-5 w-7 shrink-0 items-center justify-center rounded text-[10px] font-semibold">
+                M{c.n}
+              </span>
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="text-primary text-xs">
+                  {c.materialTitle}
+                  {c.pageNumber !== null ? ` · p${c.pageNumber}` : ""}
+                </span>
+                <span className="text-secondary line-clamp-2 text-[11px] leading-4">
+                  {c.preview ||
+                    "Used because this course material matched the question."}
+                </span>
+              </span>
+            </div>
+          ))}
+        </SourceGroup>
+      ) : null}
     </div>
   );
+}
+
+function SourceGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="text-secondary text-[10px] font-semibold tracking-widest uppercase">
+        {title}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function extractTranscriptCitations(
+  answerText: string,
+  transcriptLines: readonly TranscriptLine[],
+): TranscriptCitation[] {
+  const out = new Map<number, TranscriptCitation>();
+  let m: RegExpExecArray | null;
+  CITATION_RE.lastIndex = 0;
+  while ((m = CITATION_RE.exec(answerText)) !== null) {
+    if (!m[1] || !m[2]) continue;
+    const minutes = Number.parseInt(m[1], 10);
+    const seconds = Number.parseInt(m[2], 10);
+    const totalSeconds = minutes * 60 + seconds;
+    const line = findTranscriptLine(transcriptLines, totalSeconds);
+    out.set(totalSeconds, {
+      label: `${m[1]}:${m[2]}`,
+      totalSeconds,
+      preview: line?.content,
+    });
+  }
+  return [...out.values()].sort((a, b) => a.totalSeconds - b.totalSeconds);
+}
+
+function findTranscriptLine(
+  lines: readonly TranscriptLine[],
+  totalSeconds: number,
+): TranscriptLine | undefined {
+  return lines.find((line) => {
+    const seconds = line.timestampSeconds ?? timestampToSeconds(line.timestamp);
+    return Math.abs(seconds - totalSeconds) <= 3;
+  });
+}
+
+function timestampToSeconds(timestamp: string): number {
+  const [m, s] = timestamp.split(":").map((part) => Number.parseInt(part, 10));
+  return (m || 0) * 60 + (s || 0);
+}
+
+function jumpToTranscript(totalSeconds: number) {
+  const el = document.getElementById(`transcript-${totalSeconds}`);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-primary-accent");
+    window.setTimeout(
+      () => el.classList.remove("ring-2", "ring-primary-accent"),
+      1500,
+    );
+  }
 }

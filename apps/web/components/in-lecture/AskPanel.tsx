@@ -13,6 +13,7 @@ import { ToolCallChip } from "@/components/in-lecture/ToolCallChip";
 import { persistQuestion, recordQuickPrompt } from "@/lib/actions/engagement";
 import { useChat } from "@/lib/useChat";
 import type { Message } from "@/types/messages";
+import type { TranscriptItem } from "@/types/transcript";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   useEffect,
@@ -26,6 +27,7 @@ import {
   MdBolt,
   MdChatBubbleOutline,
   MdExpandMore,
+  MdReplay,
   MdSchedule,
   MdSend,
 } from "react-icons/md";
@@ -145,6 +147,23 @@ export default function AskPanel() {
     send(prompt.label);
   };
 
+  const catchMeUp = () => {
+    if (streaming) return;
+    const prompt =
+      "Catch me up on the last five minutes of lecture. Give the key idea, any definitions or formulas, and one sentence on why it matters.";
+    if (sessionId) {
+      void persistQuestion(
+        sessionId,
+        prompt,
+        "immediate",
+        session.currentAnchorId,
+      ).catch((err) => {
+        console.error("persistQuestion(catch-up) failed", err);
+      });
+    }
+    send(prompt);
+  };
+
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter" || e.shiftKey) return;
     e.preventDefault();
@@ -167,7 +186,12 @@ export default function AskPanel() {
             m.role === "student" ? (
               <StudentMessage key={m.id} message={m} />
             ) : (
-              <InLectureMessage key={m.id} message={m} streaming={streaming} />
+              <InLectureMessage
+                key={m.id}
+                message={m}
+                streaming={streaming}
+                transcriptLines={session.lines}
+              />
             ),
           )
         )}
@@ -183,6 +207,15 @@ export default function AskPanel() {
           </p>
         )}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={catchMeUp}
+            disabled={streaming || session.lines.length === 0}
+            className="bg-primary-accent text-primary-contr hover:bg-primary-accent-dark inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <MdReplay className="h-4 w-4" />
+            Catch me up
+          </button>
           {QUICK_PROMPTS.map((prompt) => (
             <button
               key={prompt.type}
@@ -253,9 +286,11 @@ function normalizeMathDelimiters(text: string): string {
 function InLectureMessage({
   message,
   streaming,
+  transcriptLines,
 }: {
   message: Message;
   streaming: boolean;
+  transcriptLines: readonly (TranscriptItem & { timestampSeconds?: number })[];
 }): ReactNode {
   const hasContent = message.content.length > 0;
   const tools = message.toolCalls ?? [];
@@ -346,7 +381,11 @@ function InLectureMessage({
       >
         {prepped}
       </ReactMarkdown>
-      <SourcesTray manifest={cites} />
+      <SourcesTray
+        manifest={cites}
+        answerText={message.content}
+        transcriptLines={transcriptLines}
+      />
     </div>
   );
 }

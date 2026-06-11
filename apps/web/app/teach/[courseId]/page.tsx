@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   MdAdd,
+  MdAnalytics,
   MdArrowForward,
   MdHistory,
   MdRadioButtonChecked,
@@ -27,7 +28,8 @@ export default async function TeachCourseIndex({
   if (!detail) notFound();
 
   const { error } = await searchParams;
-  const { course, liveSessions, scheduledSessions, endedSessions } = detail;
+  const { course, liveSessions, scheduledSessions, endedSessions, analytics } =
+    detail;
 
   return (
     <div className="bg-primary-bg flex h-full min-h-0 flex-col overflow-y-auto">
@@ -81,6 +83,40 @@ export default async function TeachCourseIndex({
           </form>
         </section>
 
+        <section className="bg-primary-contr border-divider flex flex-col gap-4 rounded-2xl border p-6 shadow-sm">
+          <h2 className="text-primary flex items-center gap-2 text-base font-semibold">
+            <MdAnalytics className="text-primary-accent h-5 w-5" />
+            Engagement over time
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <AnalyticsTile label="Lectures" value={analytics.lectureCount} />
+            <AnalyticsTile label="Questions" value={analytics.totalQuestions} />
+            <AnalyticsTile label="Signals" value={analytics.totalSignals} />
+            <AnalyticsTile
+              label="Q / lecture"
+              value={analytics.averageQuestionsPerLecture}
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <InsightLine
+              label="Most active lecture"
+              value={
+                analytics.busiestLectureTitle
+                  ? `${analytics.busiestLectureTitle} · ${analytics.busiestLectureQuestionCount} questions`
+                  : "No question activity yet"
+              }
+            />
+            <InsightLine
+              label="Top confusion signal"
+              value={
+                analytics.topSignal
+                  ? `${labelSignal(analytics.topSignal)} · ${analytics.topSignalCount} taps`
+                  : "No confusion signals yet"
+              }
+            />
+          </div>
+        </section>
+
         {liveSessions.length > 0 && (
           <LectureSection
             title="Live now"
@@ -114,6 +150,49 @@ export default async function TeachCourseIndex({
       </div>
     </div>
   );
+}
+
+function AnalyticsTile({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="bg-primary-bg/60 border-divider rounded-xl border p-3">
+      <p className="text-primary text-lg font-semibold tabular-nums">{value}</p>
+      <p className="text-secondary text-[11px] font-semibold tracking-widest uppercase">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function InsightLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-divider rounded-xl border px-3 py-2.5">
+      <p className="text-secondary text-[11px] font-semibold tracking-widest uppercase">
+        {label}
+      </p>
+      <p className="text-primary mt-1 text-sm">{value}</p>
+    </div>
+  );
+}
+
+function labelSignal(signal: string): string {
+  switch (signal) {
+    case "im_lost":
+      return "I'm lost";
+    case "re_explain":
+      return "Re-explain";
+    case "what_just_happened":
+      return "What just happened?";
+    case "give_example":
+      return "Give an example";
+    default:
+      return signal;
+  }
 }
 
 function LectureSection({

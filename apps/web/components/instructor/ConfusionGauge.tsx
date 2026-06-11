@@ -1,6 +1,8 @@
 "use client";
 
 import { useLatestConfusionAnchor } from "@/lib/realtime/useLatestConfusionAnchor";
+import { buildConfusionMoments } from "@/lib/classroom-intelligence";
+import { useLiveConfusionEvents } from "@/lib/realtime/useLiveConfusionEvents";
 import { useLiveConfusion } from "@/lib/realtime/useLiveConfusion";
 import { useLiveTranscript } from "@/lib/realtime/useLiveTranscript";
 import { useMemo } from "react";
@@ -21,7 +23,17 @@ export function ConfusionGauge({ sessionId }: { sessionId: string }) {
     totals.what_just_happened +
     totals.give_example;
   const anchor = useLatestConfusionAnchor(sessionId);
+  const events = useLiveConfusionEvents(sessionId);
   const transcript = useLiveTranscript(sessionId);
+  const topMoment = useMemo(
+    () =>
+      buildConfusionMoments({
+        signals: events,
+        transcript,
+        windowSeconds: 10 * 60,
+      })[0] ?? null,
+    [events, transcript],
+  );
 
   // Resolve the anchor id to the matching transcript line so we can show a
   // human-readable timestamp on the jump button.
@@ -68,14 +80,29 @@ export function ConfusionGauge({ sessionId }: { sessionId: string }) {
           minute. You&apos;ll see counts here when they do.
         </p>
       ) : (
-        <ul className="flex flex-col gap-1 text-sm">
-          {(Object.keys(LABELS) as (keyof typeof LABELS)[]).map((k) => (
-            <li key={k} className="flex justify-between">
-              <span className="text-secondary">{LABELS[k]}</span>
-              <span className="text-primary font-semibold">{totals[k]}</span>
-            </li>
-          ))}
-        </ul>
+        <>
+          {topMoment ? (
+            <div className="bg-primary-bg/60 border-divider rounded-lg border p-3">
+              <p className="text-secondary text-[11px] font-semibold tracking-widest uppercase">
+                likely stuck on
+              </p>
+              <p className="text-primary mt-1 text-sm font-semibold">
+                {topMoment.concept}
+              </p>
+              <p className="text-secondary mt-1 text-xs">
+                {topMoment.count} clustered signals near {topMoment.timestamp}
+              </p>
+            </div>
+          ) : null}
+          <ul className="flex flex-col gap-1 text-sm">
+            {(Object.keys(LABELS) as (keyof typeof LABELS)[]).map((k) => (
+              <li key={k} className="flex justify-between">
+                <span className="text-secondary">{LABELS[k]}</span>
+                <span className="text-primary font-semibold">{totals[k]}</span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       {anchorLine && (
         <button
